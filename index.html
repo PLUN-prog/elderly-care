@@ -1,0 +1,3919 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>居家智能医养监护系统</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+/* ===================== 主题令牌 ===================== */
+:root[data-theme="dark"]{
+  --bg:#0a0f1a; --bg-elev:#0f1626; --surface:#131c2e; --surface-2:#182135;
+  --border:rgba(255,255,255,.075); --border-strong:rgba(255,255,255,.13);
+  --text:#e8eefc; --text-2:#93a4c2; --text-3:#5d6f8f;
+  --accent:#38bdf8; --accent-soft:rgba(56,189,248,.12); --accent-line:rgba(56,189,248,.32);
+  --ok:#34d399; --warn:#fbbf24; --danger:#f87171; --info:#818cf8;
+  --ok-bg:rgba(52,211,153,.11); --warn-bg:rgba(251,191,36,.11); --danger-bg:rgba(248,113,113,.12);
+  --grid:rgba(255,255,255,.055);
+  --track:rgba(255,255,255,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  --nav-active:rgba(56,189,248,.1);
+  --sos-a:#f87171; --sos-b:#dc2626;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --bg-elev:#ffffff; --surface:#ffffff; --surface-2:#fafbfc;
+  --border:rgba(15,23,42,.085); --border-strong:rgba(15,23,42,.16);
+  --text:#0f172a; --text-2:#5a6a85; --text-3:#93a2b8;
+  --accent:#0369a1; --accent-soft:rgba(3,105,161,.07); --accent-line:rgba(3,105,161,.26);
+  --ok:#067a52; --warn:#9a6206; --danger:#b42318; --info:#4f46e5;
+  --ok-bg:rgba(6,122,82,.08); --warn-bg:rgba(154,98,6,.08); --danger-bg:rgba(180,35,24,.07);
+  --grid:rgba(15,23,42,.05);
+  --track:rgba(15,23,42,.09);
+  --shadow:0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+  --nav-active:rgba(3,105,161,.07);
+  --sos-a:#ef4444; --sos-b:#b91c1c;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.55;
+  -webkit-font-smoothing:antialiased; font-size:13px;
+  transition:background .25s, color .25s;
+}
+.num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===================== 外壳布局 ===================== */
+.shell{display:grid;grid-template-columns:212px 1fr;min-height:100vh}
+@media (max-width:820px){.shell{grid-template-columns:1fr}}
+
+/* ---------- 侧边栏 ---------- */
+.side{
+  background:var(--bg-elev); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:18px 12px 12px;
+  position:sticky; top:0; height:100vh;
+}
+@media (max-width:820px){
+  .side{position:static;height:auto;flex-direction:row;align-items:center;
+        padding:12px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border)}
+  .side .brand{margin-bottom:0;padding-bottom:0;border:0;flex-shrink:0}
+  .side nav{flex-direction:row;flex:0 0 auto;margin-left:10px}
+  .side .side-foot{display:none}
+}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 16px;margin-bottom:14px;
+       border-bottom:1px solid var(--border)}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);
+             border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand .mark svg{display:block}
+.brand .bt{font-size:13px;font-weight:500;letter-spacing:.2px;line-height:1.3;white-space:nowrap}
+.brand .bs{font-size:11px;color:var(--text-3);white-space:nowrap}
+.side nav{display:flex;flex-direction:column;gap:1px;flex:1}
+.nitem{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;
+  font-size:13px;color:var(--text-2);cursor:pointer;position:relative;
+  border:0;background:transparent;width:100%;text-align:left;font-family:inherit;
+  transition:background .16s,color .16s;white-space:nowrap
+}
+.nitem svg{flex-shrink:0;opacity:.85}
+.nitem:hover{background:var(--surface);color:var(--text)}
+.nitem.on{background:var(--nav-active);color:var(--text)}
+.nitem.on svg{opacity:1;stroke:var(--accent)}
+.nitem.on::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);
+                  width:2px;height:15px;background:var(--accent);border-radius:0 2px 2px 0}
+.nitem .cnt{margin-left:auto;font-size:11px;padding:0 6px;border-radius:99px;
+            background:var(--danger-bg);color:var(--danger);line-height:1.6}
+.side-foot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--border);
+           display:flex;align-items:center;justify-content:space-between;gap:8px}
+.side-foot .st{font-size:11px;color:var(--text-3);line-height:1.45}
+.tbtn{
+  border:1px solid var(--border-strong);background:transparent;color:var(--text-2);
+  width:28px;height:28px;border-radius:7px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;transition:all .16s
+}
+.tbtn:hover{color:var(--text);border-color:var(--accent-line);background:var(--accent-soft)}
+.tbtn .ic-sun{display:none}
+:root[data-theme="dark"] .tbtn .ic-sun{display:block}
+:root[data-theme="dark"] .tbtn .ic-moon{display:none}
+
+/* ---------- 主区 ---------- */
+.main{min-width:0;padding:22px 26px 40px;max-width:1420px}
+@media (max-width:820px){.main{padding:16px 14px 32px}}
+.page{display:none}
+.page.on{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.phead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.phead h2{font-size:17px;font-weight:500;letter-spacing:.2px}
+.phead .psub{font-size:12px;color:var(--text-3);margin-top:3px}
+.phead .pact{display:flex;align-items:center;gap:10px;flex-shrink:0}
+
+/* ---------- 卡片 ---------- */
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:16px 18px; box-shadow:var(--shadow)
+}
+.card + .card{margin-top:14px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-h .ct{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.card-h .ct svg{stroke:var(--text-3)}
+.card-h .cm{font-size:11px;color:var(--text-3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:1180px){.grid4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+@media (max-width:560px){.grid4{grid-template-columns:1fr}}
+
+/* ---------- Hero 安心分 ---------- */
+.hero{
+  display:flex;align-items:center;gap:26px;padding:22px 26px;margin-bottom:16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+  position:relative;overflow:hidden
+}
+.hero::after{
+  content:"";position:absolute;right:-70px;top:-70px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle, var(--accent-soft) 0%, transparent 70%);pointer-events:none
+}
+.hero-ring{position:relative;width:112px;height:112px;flex-shrink:0}
+.hero-ring svg{display:block;transform:rotate(-90deg)}
+.hero-ring .hin{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px
+}
+.hero-ring .hin b{font-size:33px;font-weight:500;line-height:1;letter-spacing:-.5px}
+.hero-ring .hin span{font-size:10px;color:var(--text-3);letter-spacing:.8px}
+.hero-meta{flex:1;min-width:0}
+.hero-meta .ht{font-size:16px;font-weight:500;margin-bottom:4px}
+.hero-meta .hs{font-size:12px;color:var(--text-3);margin-bottom:12px}
+.kpis{display:flex;gap:7px;flex-wrap:wrap}
+.kpi{
+  font-size:11px;padding:3px 10px;border-radius:99px;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)
+}
+.kpi.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.kpi.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.kpi.bad{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+
+/* 三条细分项弧 */
+.hero-arcs{display:flex;gap:20px;flex-shrink:0;padding-left:24px;border-left:1px solid var(--border)}
+@media (max-width:820px){.hero-arcs{display:none}}
+.arc-each{text-align:center}
+.arc-each .al{font-size:11px;color:var(--text-3);margin-top:7px}
+.arc-each .av{font-size:13px;font-weight:500;margin-top:2px}
+
+/* ---------- 指标卡 ---------- */
+.metric{
+  background:var(--surface);border:1px solid var(--border);border-radius:11px;
+  padding:14px 15px;position:relative;overflow:hidden;transition:border-color .2s
+}
+.metric .mh{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-3)}
+.metric .mv{font-size:27px;font-weight:500;margin-top:9px;line-height:1;letter-spacing:-.5px}
+.metric .mv .mu{font-size:12px;color:var(--text-3);font-weight:400;margin-left:4px;letter-spacing:0}
+.metric .mf{font-size:11px;color:var(--text-3);margin-top:8px}
+.metric .mspark{position:absolute;right:0;bottom:0;opacity:.5;pointer-events:none}
+.metric.alert{border-color:var(--danger);animation:mpulse 1.8s ease-in-out infinite}
+.metric.alert .mv{color:var(--danger)}
+@keyframes mpulse{0%,100%{background:var(--surface)}50%{background:var(--danger-bg)}}
+:root[data-theme="light"] .metric.alert{animation:mpulse-l 1.8s ease-in-out infinite}
+@keyframes mpulse-l{0%,100%{background:#fff}50%{background:var(--danger-bg)}}
+
+/* ---------- 行条目 ---------- */
+.rows{display:flex;flex-direction:column}
+.rw{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:7px 0;font-size:12.5px;border-bottom:1px solid var(--border)}
+.rw:last-child{border-bottom:0}
+.rw .rk{color:var(--text-3);flex-shrink:0}
+.rw .rv{color:var(--text);font-weight:500;text-align:right}
+
+/* ---------- 细进度条 ---------- */
+.gauge{height:3px;background:var(--track);border-radius:99px;overflow:hidden;margin:6px 0 2px}
+.gauge>i{display:block;height:100%;border-radius:99px;background:var(--accent);transition:width .45s,background .45s}
+
+/* ---------- 徽标 ---------- */
+.pill{font-size:10px;padding:2px 8px;border-radius:99px;background:var(--surface-2);
+      border:1px solid var(--border);color:var(--text-3);white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);
+  padding:7px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:7px;transition:all .16s;white-space:nowrap
+}
+.btn:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#08111f;font-weight:500}
+:root[data-theme="dark"] .btn.pri{color:#06121f}
+.btn.pri:hover{opacity:.88;background:var(--accent);color:#08111f}
+.btn.dgr{background:var(--danger-bg);border-color:transparent;color:var(--danger)}
+.btn.dgr:hover{background:var(--danger);color:#fff;border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- 融合判定 ---------- */
+.fusion-v{font-size:13px;font-weight:500}
+.fusion-v.confirm{color:var(--danger)}
+.fusion-v.downgrade{color:var(--warn)}
+.fusion-v.suppress{color:var(--ok)}
+.src-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(94px,1fr));gap:8px;margin-top:13px}
+.src-cell{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 6px;text-align:center}
+.src-cell .sk{font-size:10.5px;color:var(--text-3)}
+.src-cell .sv{font-size:16px;font-weight:500;margin-top:3px;letter-spacing:-.3px}
+.src-cell .sbar{height:2.5px;background:var(--track);border-radius:99px;margin-top:6px;overflow:hidden}
+.src-cell .sbar>i{display:block;height:100%;border-radius:99px;transition:width .45s}
+
+/* ---------- 户型图 ---------- */
+.fp-room{fill:var(--surface-2);stroke:var(--border-strong);stroke-width:1;transition:fill .4s,stroke .4s}
+.fp-room.active{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8}
+.fp-room.danger{fill:var(--danger-bg);stroke:var(--danger);stroke-width:1.8}
+.fp-label{font-size:12px;fill:var(--text-3);font-weight:500;transition:fill .4s}
+.fp-label.active{fill:var(--accent)}
+.fp-label.danger{fill:var(--danger)}
+.fp-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--text-3);margin-top:12px}
+.fp-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.rt-chip{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--surface-2);
+         border:1px solid var(--border);color:var(--text-3)}
+.rt-chip.cur{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+.rt-chip.bath{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+.rt-chip.away{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.room-track{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px;align-items:center}
+
+/* ---------- 时间轴 ---------- */
+.timeline{position:relative;padding-left:17px;max-height:290px;overflow-y:auto}
+.timeline::before{content:"";position:absolute;left:4px;top:7px;bottom:7px;width:1px;background:var(--border-strong)}
+.tl-item{position:relative;padding:0 0 13px 11px;font-size:12.5px}
+.tl-item::before{content:"";position:absolute;left:-17px;top:5px;width:7px;height:7px;
+                 border-radius:50%;background:var(--text-3);box-shadow:0 0 0 3px var(--surface)}
+.tl-item.danger::before{background:var(--danger)}
+.tl-item.warn::before{background:var(--warn)}
+.tl-item.ok::before{background:var(--ok)}
+.tl-item .tt{color:var(--text-3);font-size:11px;margin-right:8px;font-variant-numeric:tabular-nums}
+.tl-item .tm{color:var(--text-2);line-height:1.5}
+
+/* ---------- 预警列表 ---------- */
+.alert-list{max-height:calc(100vh - 300px);min-height:180px;overflow-y:auto;
+            margin:-6px -6px 0;padding:6px 6px 0}
+.alert-list::-webkit-scrollbar{width:7px}
+.alert-list::-webkit-scrollbar-thumb{background:var(--track);border-radius:99px}
+
+.al{
+  padding:11px 13px 11px 15px;border-radius:9px;margin-bottom:8px;
+  background:var(--surface-2);border:1px solid var(--border);
+  position:relative;transition:border-color .15s,background .15s
+}
+.al:hover{border-color:var(--border-strong)}
+/* 左侧状态轨：3px 竖条，是整条预警的等级信号 */
+.al::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:9px 0 0 9px;
+            background:var(--info)}
+.al.l1::before,.al.sos::before{background:var(--danger)}
+.al.l2::before{background:var(--warn)}
+.al.l3::before{background:var(--info)}
+/* 一级/SOS 用极淡的底色调，让最紧急的直接被眼睛抓到 */
+.al.l1,.al.sos{background:linear-gradient(90deg,var(--danger-bg),transparent 62%)}
+.al.l2{background:linear-gradient(90deg,var(--warn-bg),transparent 62%)}
+
+.al .atop{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.tag{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;letter-spacing:.3px;
+     white-space:nowrap;flex-shrink:0}
+.tag-L1{background:var(--danger-bg);color:var(--danger)}
+.tag-L2{background:var(--warn-bg);color:var(--warn)}
+.tag-L3{background:var(--accent-soft);color:var(--accent)}
+.tag-SOS{background:var(--danger);color:#fff;font-weight:600}
+.al .ats{font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums;
+         margin-left:auto;flex-shrink:0}
+.al .amsg{font-size:12.5px;line-height:1.55;color:var(--text)}
+.al .awho{font-size:11px;color:var(--text-3);margin-top:5px}
+.al .awho.urgent{color:var(--danger)}
+.al .ev{
+  margin-top:9px;padding:8px 10px;background:var(--bg-elev);border-radius:7px;
+  border:1px solid var(--border)
+}
+.al .ev .evt{font-size:10.5px;color:var(--text-3);margin-bottom:6px;letter-spacing:.3px}
+.al .ev .evrow{display:flex;align-items:center;gap:8px;margin-top:5px}
+.al .ev .evn{font-size:10.5px;color:var(--text-3);width:62px;flex-shrink:0}
+.al .ev .evb{flex:1;height:2.5px;background:var(--track);border-radius:99px;overflow:hidden}
+.al .ev .evb>i{display:block;height:100%;border-radius:99px}
+.al .ev .evv{font-size:10.5px;color:var(--text-2);width:34px;text-align:right;
+             font-variant-numeric:tabular-nums;flex-shrink:0}
+
+/* 已响应：不再整体灰掉（灰掉会让"已处理"看起来像"失效"），
+   改为降饱和 + 左侧轨转绿 + 消息变次级，层次更清楚 */
+.al.ack{background:var(--surface);border-color:var(--border)}
+.al.ack::before{background:var(--ok)}
+.al.ack .amsg{color:var(--text-2)}
+.al.ack .awho{color:var(--text-3)}
+.al.ack .awho.urgent{color:var(--text-3)}
+
+.esc-line{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.esc-cd{font-size:11px;color:var(--danger);background:var(--danger-bg);
+        padding:3px 9px;border-radius:6px;font-variant-numeric:tabular-nums;
+        display:inline-flex;align-items:center;gap:5px}
+.esc-cd::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--danger);
+                animation:pulse 1.1s ease-in-out infinite}
+.esc-cd.done{color:var(--ok);background:var(--ok-bg)}
+.esc-cd.done::before{display:none}
+.esc-cd.pending{color:var(--warn);background:var(--warn-bg)}
+.esc-cd.pending::before{background:var(--warn)}
+.ack-btn{border:0;background:var(--ok);color:#04160f;font-size:11px;padding:4px 12px;
+         border-radius:6px;cursor:pointer;font-family:inherit;font-weight:500;
+         transition:opacity .15s,transform .1s}
+.ack-btn:hover{opacity:.88}
+.ack-btn:active{transform:scale(.96)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.28}}
+
+
+/* ---------- 提醒 ---------- */
+.rm-day{display:flex;align-items:center;gap:9px;margin:16px 0 9px;font-size:11.5px;color:var(--text-3)}
+.rm-day:first-child{margin-top:0}
+.rm-day::after{content:"";flex:1;height:1px;background:var(--border)}
+.rm-day .rm-cnt{font-size:10.5px;padding:1px 7px;border-radius:99px;margin-left:2px;
+                background:var(--surface-2);border:1px solid var(--border)}
+.rm{
+  display:flex;align-items:center;gap:13px;padding:11px 13px;margin-bottom:7px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
+  transition:border-color .18s,opacity .18s
+}
+.rm:hover{border-color:var(--border-strong)}
+.rm.done{opacity:.5}
+.rm.done .rmt{text-decoration:line-through;text-decoration-color:var(--text-3)}
+.rm .rm-ic{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-soft);border:1px solid var(--accent-line)
+}
+.rm.chronic .rm-ic{background:var(--surface);border-color:var(--border-strong)}
+/* 已完成：保留类别图标，右上角叠加实心勾，不丢失"这是什么"的信息 */
+.rm .rm-tick{
+  position:absolute;right:-4px;top:-4px;width:14px;height:14px;border-radius:50%;
+  background:var(--ok);display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--surface)
+}
+.rm .rm-tick svg{display:block}
+.rm .rm-bd{flex:1;min-width:0}
+.rm .rmt{font-size:12.5px;font-weight:500;line-height:1.35;
+         white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm .rmt .dose{color:var(--text-2);font-weight:400;margin-left:5px}
+.rm .rms{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-3);margin-top:3px}
+.rm .rms .sep{opacity:.4}
+.rm .rm-tag{font-size:10px;padding:1px 6px;border-radius:4px;
+            background:var(--bg-elev);border:1px solid var(--border);color:var(--text-3)}
+.rm .rm-act{flex-shrink:0;display:flex;align-items:center;gap:8px}
+.rm button{
+  border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent);
+  padding:5px 13px;border-radius:7px;font-size:11.5px;cursor:pointer;font-family:inherit;
+  white-space:nowrap;transition:all .16s;font-weight:500
+}
+.rm button:hover{background:var(--accent);color:#08111f;border-color:var(--accent)}
+.rm-ok{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ok);
+  padding:4px 11px;border-radius:7px;background:var(--ok-bg);white-space:nowrap
+}
+.rm-ok svg{display:block;background:var(--ok);border-radius:50%;padding:1.5px;width:13px;height:13px}
+
+/* ---------- SOS ---------- */
+.sos-wrap{display:flex;flex-direction:column;align-items:center;padding:8px 0 4px}
+.sos-btn{
+  width:104px;height:104px;border-radius:50%;border:0;cursor:pointer;
+  background:radial-gradient(circle at 50% 38%, var(--sos-a), var(--sos-b));
+  color:#fff;font-size:19px;font-weight:500;letter-spacing:1.5px;font-family:inherit;
+  box-shadow:0 6px 22px rgba(220,38,38,.36);transition:transform .14s,box-shadow .3s;
+  position:relative
+}
+.sos-btn::after{content:"";position:absolute;inset:-7px;border-radius:50%;
+                border:1px solid var(--danger);opacity:.25}
+.sos-btn:active{transform:scale(.955)}
+.sos-btn:hover{box-shadow:0 8px 30px rgba(220,38,38,.55)}
+.sos-tip{font-size:11.5px;color:var(--text-3);margin-top:14px;text-align:center;line-height:1.6}
+
+/* ---------- 输入 ---------- */
+input[type=text],input:not([type]){
+  width:100%;padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px;
+  background:var(--bg-elev);color:var(--text);font-size:12.5px;font-family:inherit;outline:none;
+  transition:border-color .16s
+}
+input:focus{border-color:var(--accent-line)}
+input::placeholder{color:var(--text-3)}
+
+/* ---------- 建议框 ---------- */
+.advice-box{
+  background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;
+  padding:10px 12px;font-size:12.5px;margin-top:11px;color:var(--text);line-height:1.6
+}
+.advice-box.urgent{background:var(--danger-bg);border-color:transparent;color:var(--danger)}
+.advice-box.warn{background:var(--warn-bg);border-color:transparent;color:var(--warn)}
+#adviceBox:empty{display:none}
+
+/* ---------- 风险指数 ---------- */
+.risk-flex{display:flex;gap:22px;align-items:center}
+.risk-gauge{text-align:center;min-width:98px;flex-shrink:0}
+.risk-num{font-size:40px;font-weight:500;line-height:1;letter-spacing:-1.5px}
+.risk-num.low{color:var(--ok)} .risk-num.medium{color:var(--warn)} .risk-num.high{color:var(--danger)}
+.risk-label{font-size:11.5px;color:var(--text-3);margin-top:5px}
+.risk-detail{flex:1;min-width:0}
+.risk-bar{height:4px;background:var(--track);border-radius:99px;overflow:hidden}
+.risk-bar-fill{height:100%;width:0;border-radius:99px;background:var(--ok);transition:width .6s,background .6s}
+.risk-factors{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.risk-chip{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--surface-2);
+           color:var(--text-3);border:1px solid var(--border)}
+.risk-chip.good{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.risk-suggest{font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.6}
+
+/* ---------- 图表 ---------- */
+.chart-wrap{height:250px;position:relative}
+
+/* ---------- 周报 ---------- */
+.report-box{display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px;
+            font-size:12.5px;max-height:400px;overflow-y:auto}
+.report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.report-grid .rg{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+                 padding:10px 8px;text-align:center}
+.report-grid .rg .k{font-size:11px;color:var(--text-3)}
+.report-grid .rg .v{font-size:15px;font-weight:500;margin-top:4px}
+.report-summary{background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;
+                padding:10px 12px;color:var(--text);margin-bottom:12px;line-height:1.6}
+.report-insights{margin-top:8px}
+.report-insights li{margin:7px 0 7px 17px;color:var(--text-2);line-height:1.6}
+
+/* ---------- 控制台 ---------- */
+.console{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.console + .console{margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+.scene-tag{font-size:11px;padding:3px 10px;border-radius:99px;background:var(--surface-2);
+           border:1px solid var(--border);color:var(--text-3)}
+.scene-tag.v13{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+
+/* ---------- 弹窗 ---------- */
+.modal-mask{position:fixed;inset:0;background:rgba(2,6,16,.66);backdrop-filter:blur(3px);
+            display:none;align-items:center;justify-content:center;z-index:50}
+.modal-mask.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;
+       padding:22px 24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal h3{font-size:15px;margin-bottom:9px;color:var(--danger);font-weight:500}
+.modal p{font-size:12.5px;color:var(--text-2);margin-bottom:18px;line-height:1.65}
+.modal .actions{display:flex;justify-content:flex-end;gap:9px}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed;top:18px;right:18px;background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:10px;padding:13px 17px;box-shadow:0 12px 40px rgba(0,0,0,.42);
+  font-size:12.5px;max-width:350px;z-index:60;transform:translateX(130%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1);line-height:1.55
+}
+.toast.show{transform:translateX(0)}
+.toast::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+               border-radius:10px 0 0 10px;background:var(--info)}
+.toast.danger::before{background:var(--danger)}
+.toast.warn::before{background:var(--warn)}
+.toast.danger{border-color:rgba(248,113,113,.35)}
+.toast.warn{border-color:rgba(251,191,36,.35)}
+
+/* ---------- 空态 ---------- */
+.empty{color:var(--text-3);font-size:12.5px;text-align:center;padding:24px 12px}
+/* 待处置提示条（页面级，说明侧栏角标含义） */
+.todo-line{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--warn);
+           background:var(--warn-bg);border:1px solid transparent;border-radius:8px;
+           padding:10px 12px;line-height:1.5}
+.todo-line svg{flex-shrink:0;stroke:var(--warn)}
+.todo-line b{font-variant-numeric:tabular-nums;font-weight:600}
+.foot{text-align:center;color:var(--text-3);font-size:11px;padding:26px 0 4px}
+
+/* 未读小红点 */
+.nitem .dotpulse{width:6px;height:6px;border-radius:50%;background:var(--danger);
+                 margin-left:auto;animation:dblink 1.4s ease-in-out infinite}
+@keyframes dblink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ============================================================
+   登录 / 注册页（账号由后端校验，密码 PBKDF2 加盐哈希）
+   ============================================================ */
+#login{
+  position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);padding:20px;overflow:auto;
+}
+#login.hide{display:none}
+.login-card{
+  width:100%;max-width:396px;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:32px 30px 26px;box-shadow:var(--shadow);margin:auto;
+}
+.login-logo{
+  width:46px;height:46px;border-radius:13px;margin:0 auto 15px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--accent),#6366f1);
+}
+.login-card h1{font-size:19px;font-weight:600;text-align:center;letter-spacing:.2px}
+.login-card .sub{font-size:12.5px;color:var(--text-2);text-align:center;margin-top:5px;line-height:1.6}
+
+/* 登录 / 注册分页 */
+.login-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:20px;
+  background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:4px;
+}
+.login-tab{
+  padding:8px;border:0;border-radius:7px;background:transparent;cursor:pointer;
+  font-family:inherit;font-size:13px;color:var(--text-2);
+  transition:background .15s,color .15s;
+}
+.login-tab.on{background:var(--surface);color:var(--text);font-weight:600;
+  box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.login-pane{display:none}
+.login-pane.on{display:block}
+
+.login-field{margin-top:14px}
+.login-field label{display:block;font-size:12px;color:var(--text-2);margin-bottom:6px}
+.login-field input{
+  width:100%;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);
+  border-radius:9px;padding:10px 12px;font-size:13.5px;font-family:inherit;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.login-field input:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.login-field input.bad{border-color:var(--danger)}
+
+/* 角色选择（家属 / 老人） */
+.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}
+.role-opt{
+  border:1px solid var(--border);background:var(--bg-elev);border-radius:10px;
+  padding:11px 12px;cursor:pointer;text-align:left;font-family:inherit;
+  transition:border-color .15s,background .15s;display:flex;gap:9px;align-items:center;
+}
+.role-opt.on{border-color:var(--accent-line);background:var(--accent-soft)}
+.role-opt svg{stroke:var(--text-2);flex-shrink:0}
+.role-opt.on svg{stroke:var(--accent)}
+.role-opt .rn{font-size:13px;color:var(--text);font-weight:500}
+.role-opt .rd{font-size:10.5px;color:var(--text-3);margin-top:1px}
+
+.login-btn{
+  width:100%;margin-top:20px;padding:11px;border:0;border-radius:9px;cursor:pointer;
+  background:var(--accent);color:#fff;font-size:14px;font-weight:600;font-family:inherit;
+  transition:filter .15s,transform .1s;
+}
+.login-btn:hover{filter:brightness(1.08)}
+.login-btn:active{transform:translateY(1px)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;filter:none}
+.login-err{
+  margin-top:12px;font-size:12px;color:var(--danger);background:var(--danger-bg);
+  border-radius:8px;padding:9px 11px;display:none;line-height:1.5;
+}
+.login-err.show{display:block}
+.login-ok{
+  margin-top:12px;font-size:12px;color:var(--ok);background:var(--ok-bg);
+  border-radius:8px;padding:9px 11px;display:none;line-height:1.5;
+}
+.login-ok.show{display:block}
+.login-tip{
+  margin-top:16px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:9px;font-size:11.5px;color:var(--text-3);line-height:1.7;
+}
+.login-tip b{color:var(--text-2);font-weight:600}
+.login-tip code{
+  background:var(--bg-elev);padding:1px 5px;border-radius:4px;color:var(--accent);
+  font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.login-tip .lk{color:var(--accent);cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px}
+
+/* ============================================================
+   手环端（老人视角）—— 参考小米手环的卡片式小方屏
+   ------------------------------------------------------------
+   设计依据（小米手环系列的通用交互语言）：
+     · 表盘为坐标原点，**左右滑动切换卡片**（一屏一件事）
+     · 信息密度极低：一屏只放一个主题，字号显著放大
+     · 色块编码：绿=正常 / 黄=预警 / 红=异常，颜色即结论
+     · 关键数据零点击直达（心率、血氧直接进卡片序列）
+     · 循环滚动：滑到最后一张继续滑回到第一张
+   而不是把手机 App 的布局缩到小屏里 —— 那正是「像手机端」的病根。
+   ============================================================ */
+#band{
+  position:fixed;inset:0;z-index:850;display:none;
+  background:var(--bg);overflow:auto;
+}
+#band.show{display:block}
+
+.band-stage{
+  min-height:100%;display:flex;align-items:center;justify-content:center;
+  padding:30px 20px;gap:30px;flex-wrap:wrap;
+}
+
+/* ---------- 手环硬件：圆形表体 + 上下表带 ---------- */
+.wband{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+  /* 缩放靠 CSS 变量控制：默认放大便于答辩观看，小屏由媒体查询收缩 */
+  transform:scale(var(--wb-scale,1.42));
+  transform-origin:center center;
+  /* 缩放后仍占原尺寸，避免布局跳动 */
+  margin:calc((var(--wb-scale,1.42) - 1) * 130px) 0;
+}
+.wband-strap{
+  width:150px;height:66px;flex-shrink:0;
+  background:linear-gradient(180deg,#2b2f38,#1b1e25);
+  border:1px solid #3a3f4a;
+}
+.wband-strap.top{border-radius:26px 26px 0 0;border-bottom:0;
+  box-shadow:inset 0 10px 18px rgba(0,0,0,.5)}
+.wband-strap.bot{border-radius:0 0 26px 26px;border-top:0;
+  box-shadow:inset 0 -10px 18px rgba(0,0,0,.5)}
+/* 表扣提示（下带上的一排小孔） */
+.wband-strap.bot::after{
+  content:"";display:block;width:26px;height:3px;border-radius:2px;
+  background:#4a505c;margin:30px auto 0;
+}
+
+/* 表体：小米手环是「跑道屏」——圆角矩形，不是正方形也不是手机 */
+.wband-body{
+  width:236px;height:330px;border-radius:56px;flex-shrink:0;
+  background:linear-gradient(160deg,#23262d,#14171c);
+  border:1px solid #3d424d;
+  box-shadow:
+    0 30px 70px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.07);
+  padding:14px;position:relative;display:flex;
+}
+/* 侧边功能键（小米手环在表体右侧有一枚线性马达按键位） */
+.wband-body::after{
+  content:"";position:absolute;right:-3px;top:118px;width:4px;height:52px;
+  border-radius:0 3px 3px 0;background:linear-gradient(180deg,#4d545f,#343a44);
+}
+
+/* 屏：OLED 纯黑底，这是手环质感的关键 */
+.wband-screen{
+  flex:1;border-radius:44px;background:#000;overflow:hidden;
+  display:flex;flex-direction:column;position:relative;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* 状态栏 */
+.wb-status{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 18px 3px;font-size:10px;color:#8b93a1;flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+.wb-status .r{display:flex;align-items:center;gap:5px}
+.wb-bat{width:17px;height:9px;border:1px solid #6b7280;border-radius:2.5px;
+  position:relative;padding:1.5px}
+.wb-bat i{display:block;height:100%;width:72%;background:#22c55e;border-radius:1px}
+.wb-bat::after{content:"";position:absolute;right:-3px;top:2.5px;width:2px;
+  height:3px;background:#6b7280;border-radius:0 1px 1px 0}
+
+/* 卡片容器：横向滑动，一屏一张 */
+.wb-cards{
+  flex:1;display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.wb-cards::-webkit-scrollbar{display:none}
+.wb-card{
+  flex:0 0 100%;width:100%;scroll-snap-align:center;
+  padding:6px 20px 14px;display:flex;flex-direction:column;
+  justify-content:center;gap:12px;min-width:0;
+}
+
+/* 卡片标题（手环上的小标题很克制） */
+.wb-title{
+  font-size:11px;color:#7d8697;letter-spacing:1.2px;
+  display:flex;align-items:center;gap:5px;flex-shrink:0;
+}
+.wb-title svg{stroke:#7d8697}
+
+/* ---------- ① 表盘卡 ---------- */
+.wb-clock{text-align:center}
+.wb-clock .t{
+  font-size:62px;font-weight:200;letter-spacing:-3px;line-height:1;
+  color:#fff;font-variant-numeric:tabular-nums;
+}
+.wb-clock .d{font-size:12px;color:#8b93a1;margin-top:8px;letter-spacing:.3px}
+.wb-clock .wx{
+  margin-top:14px;font-size:11px;color:#7d8697;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+/* 表盘的步数小环（小米表盘常见的「三环/单环」元素） */
+.wb-ring-wrap{
+  display:flex;align-items:center;justify-content:center;gap:11px;margin-top:16px;
+}
+.wb-ring{position:relative;width:56px;height:56px;flex-shrink:0}
+.wb-ring svg{transform:rotate(-90deg)}
+.wb-ring .pc{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;color:#fff;
+}
+.wb-ring .lb{font-size:9px;color:#8b93a1;text-align:center;margin-top:3px}
+
+/* ---------- 通用大数值卡（心率 / 血氧）---------- */
+.wb-metric{text-align:center}
+.wb-metric .ic{
+  width:42px;height:42px;border-radius:50%;margin:0 auto 10px;
+  display:flex;align-items:center;justify-content:center;
+}
+.wb-metric .num{
+  font-size:56px;font-weight:300;line-height:1;color:#fff;
+  font-variant-numeric:tabular-nums;letter-spacing:-2px;
+}
+.wb-metric .num small{font-size:14px;color:#8b93a1;font-weight:400;
+  margin-left:4px;letter-spacing:0}
+.wb-metric .nm{font-size:12px;color:#8b93a1;margin-top:7px}
+.wb-metric .tag{
+  margin-top:10px;font-size:11px;padding:4px 11px;border-radius:20px;
+  display:inline-block;background:#1a1d23;color:#9aa3b2;
+}
+/* 异常态：整张卡片的强调色转为红 —— 颜色即结论 */
+.wb-card.warn .wb-metric .num{color:#f87171}
+.wb-card.warn .wb-metric .tag{background:rgba(248,113,113,.16);color:#fca5a5}
+.wb-card.ok   .wb-metric .tag{background:rgba(34,197,94,.16);color:#4ade80}
+
+/* 迷你趋势条（手环上很小的那种） */
+.wb-spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:2px}
+.wb-spark i{flex:1;background:#3b82f6;border-radius:1.5px 1.5px 0 0;opacity:.65}
+.wb-spark i.hi{background:#f87171;opacity:.9}
+
+/* ---------- 位置卡 ---------- */
+.wb-loc{text-align:center}
+.wb-loc .big{font-size:34px;font-weight:400;color:#fff;line-height:1.15}
+.wb-loc .big.away{color:#fbbf24}
+.wb-loc .sub{font-size:11.5px;color:#8b93a1;margin-top:8px;line-height:1.5}
+.wb-loc .pill{
+  margin-top:12px;font-size:11px;padding:5px 13px;border-radius:20px;
+  display:inline-block;background:rgba(34,197,94,.15);color:#4ade80;
+}
+.wb-loc .pill.warn{background:rgba(251,191,36,.15);color:#fbbf24}
+
+/* ---------- 用药卡 ---------- */
+.wb-meds{display:flex;flex-direction:column;gap:9px}
+.wb-med{
+  display:flex;align-items:center;gap:9px;font-size:12.5px;color:#e5e7eb;
+  background:#12151a;border-radius:11px;padding:10px 12px;
+}
+.wb-med .dot{width:7px;height:7px;border-radius:50%;background:#6b7280;flex-shrink:0}
+.wb-med.due .dot{background:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.18)}
+.wb-med.done .dot{background:#22c55e}
+.wb-med .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.wb-med .tm{color:#8b93a1;font-size:11px;font-variant-numeric:tabular-nums}
+.wb-med.done .nm{color:#6b7280;text-decoration:line-through}
+.wb-med.due{background:rgba(251,191,36,.09)}
+
+/* ---------- 家人留言卡 ---------- */
+.wb-msgs{display:flex;flex-direction:column;gap:8px}
+.wb-msg{
+  display:flex;gap:9px;align-items:flex-start;background:#12151a;
+  border-radius:11px;padding:10px 11px;
+}
+.wb-msg .av{
+  width:25px;height:25px;border-radius:50%;background:#1f2937;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;color:#93c5fd;font-weight:600;
+}
+.wb-msg .bd{flex:1;min-width:0}
+.wb-msg .wh{font-size:10px;color:#7d8697;margin-bottom:2px}
+.wb-msg .tx{font-size:11.5px;color:#d1d5db;line-height:1.5}
+
+/* ---------- SOS 卡 ---------- */
+.wb-sos-wrap{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.wb-sos{
+  border:0;border-radius:18px;padding:20px 16px;cursor:pointer;
+  background:linear-gradient(140deg,#ef4444,#b91c1c);
+  color:#fff;font-family:inherit;
+  box-shadow:0 10px 26px rgba(239,68,68,.4);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.wb-sos:active{transform:translateY(1px)}
+.wb-sos .l{font-size:17px;font-weight:700;letter-spacing:1.5px}
+.wb-sos .s{font-size:10px;opacity:.85;letter-spacing:.4px}
+.wb-mini{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;
+}
+.wb-mini button{
+  border:1px solid #2a2f38;background:#12151a;border-radius:13px;
+  padding:13px 8px;cursor:pointer;font-family:inherit;color:#e5e7eb;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.wb-mini button:active{background:#1a1d23}
+.wb-mini button:active{background:#1a1d23}
+.wb-mini .l{font-size:11px;color:#9aa3b2}
+.wb-mini svg{stroke:#9aa3b2}
+
+/* ---------- 滑动指示点 ---------- */
+.wb-dots{
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:0 0 11px;flex-shrink:0;
+}
+.wb-dots i{
+  width:5px;height:5px;border-radius:50%;background:#3a3f4a;
+  transition:background .2s,width .2s;
+}
+.wb-dots i.on{background:#e5e7eb;width:14px;border-radius:3px}
+
+/* ---------- 右侧说明面板 ---------- */
+.band-note{
+  width:300px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:22px;
+}
+.band-note h3{font-size:14px;font-weight:600;margin-bottom:10px;
+  display:flex;align-items:center;gap:7px}
+.band-note p{font-size:12px;color:var(--text-2);line-height:1.75;margin-bottom:11px}
+.band-note ul{list-style:none;font-size:12px;color:var(--text-2);line-height:1.9}
+.band-note li{padding-left:15px;position:relative}
+.band-note li::before{content:"";position:absolute;left:3px;top:9px;width:4px;height:4px;
+  border-radius:50%;background:var(--accent)}
+.band-note .kbd{
+  display:inline-block;background:var(--bg-elev);border:1px solid var(--border);
+  border-radius:5px;padding:1px 6px;font-size:11px;color:var(--text-2);margin:0 2px;
+}
+
+.band-close{
+  position:fixed;top:18px;right:22px;z-index:860;
+  display:none;align-items:center;gap:7px;
+  background:var(--surface);border:1px solid var(--border);border-radius:9px;
+  padding:8px 13px;cursor:pointer;color:var(--text);font-family:inherit;font-size:12.5px;
+  box-shadow:var(--shadow);
+}
+.band-close.show{display:flex}
+.band-close svg{stroke:var(--text-2)}
+.band-close:hover{border-color:var(--border-strong)}
+
+/* 侧栏「切换到手环」入口 */
+.side-switch{
+  margin:auto 12px 12px;padding:10px 12px;border-radius:10px;
+  display:flex;align-items:center;gap:9px;cursor:pointer;
+  background:var(--accent-soft);border:1px solid var(--accent-line);
+  color:var(--accent);font-family:inherit;font-size:12.5px;font-weight:500;
+  transition:filter .15s;
+}
+.side-switch:hover{filter:brightness(1.08)}
+.side-switch svg{stroke:var(--accent);flex-shrink:0}
+
+/* ============================================================
+   响应式适配（手机 / 平板 / 小笔记本）
+   ------------------------------------------------------------
+   三处必须适配的地方：
+     ① 手环端 —— 设备框按屏幕宽度缩放，手机上收成真实尺寸
+     ② 登录页 —— 小屏去掉多余留白、按钮加大到可点
+     ③ 大屏端侧栏 —— 手机上改为横向滚动条
+   ============================================================ */
+
+/* ---------- ① 手环端 ---------- */
+/* 中屏（平板/小笔记本）：降低放大倍率，避免设备框撑出视口 */
+@media (max-width:1180px){
+  .wband{ --wb-scale:1.18 }
+}
+/* 窄屏（横屏手机 / 小平板）：说明面板换行到下方，居中排布 */
+@media (max-width:980px){
+  .band-stage{ flex-direction:column; align-items:center; gap:22px; padding:26px 16px }
+  .wband{ --wb-scale:1.12 }
+  .band-note{ width:100%; max-width:420px }
+}
+/* 手机竖屏：收成接近真实手环尺寸，去掉缩放带来的额外留白 */
+@media (max-width:620px){
+  .band-stage{ padding:20px 12px; gap:16px }
+  .wband{ --wb-scale:1; margin:0 }
+  .wband-strap{ width:112px; height:44px }
+  .wband-body{ width:200px; height:284px; border-radius:48px; padding:11px }
+  .wband-screen{ border-radius:38px }
+  .wb-clock .t{ font-size:52px; letter-spacing:-2.4px }
+  .wb-metric .num{ font-size:46px }
+  .wb-loc .big{ font-size:29px }
+  .wb-sos{ padding:17px 14px }
+  .wb-sos .l{ font-size:15.5px }
+  .band-note{ padding:18px; font-size:11.5px }
+  .band-close{ top:12px; right:12px; padding:7px 11px; font-size:12px }
+}
+/* 超窄屏（iPhone SE 等 320px）：再收一档，保证不横向溢出 */
+@media (max-width:380px){
+  .wband-body{ width:176px; height:252px; border-radius:42px; padding:9px }
+  .wband-screen{ border-radius:33px }
+  .wband-strap{ width:98px; height:38px }
+  .wb-clock .t{ font-size:44px }
+  .wb-metric .num{ font-size:40px }
+  .wb-cards .wb-card{ padding:6px 15px 12px }
+  .wb-loc .big{ font-size:25px }
+}
+/* 手机横屏：手环框与说明并排，纵向空间紧张时压缩留白 */
+@media (max-height:520px) and (orientation:landscape){
+  .band-stage{ padding:10px 14px; gap:14px; flex-direction:row; align-items:center }
+  .wband{ --wb-scale:.86; margin:0 }
+  .band-note{ display:none }
+}
+
+/* ---------- ② 登录页 ---------- */
+@media (max-width:620px){
+  #login{ padding:14px }
+  .login-card{ padding:26px 20px 22px; border-radius:14px }
+  .login-card h1{ font-size:17.5px }
+  .login-card .sub{ font-size:12px }
+  .login-logo{ width:42px; height:42px; margin-bottom:13px }
+  /* 手机上输入框加大，避免 iOS 自动放大页面（字号 <16px 会触发） */
+  .login-field input{ font-size:16px; padding:11px 12px }
+  .login-btn{ padding:12px; font-size:14.5px }
+  .role-opt{ padding:10px }
+  .role-opt .rn{ font-size:12.5px }
+  .role-opt .rd{ font-size:10px }
+}
+@media (max-width:380px){
+  .role-pick{ grid-template-columns:1fr; gap:7px }
+}
+
+/* ---------- ③ 大屏端侧栏（手机上横滚）---------- */
+@media (max-width:820px){
+  /* side-switch 在横向布局里不再用 auto 上边距，否则会被顶开 */
+  .side-switch{
+    margin:0 0 0 10px; flex-shrink:0; white-space:nowrap;
+    padding:9px 11px; font-size:12px;
+  }
+  .side nav::-webkit-scrollbar{ display:none }
+}
+/* 主内容区在小屏上的留白 */
+@media (max-width:620px){
+  .main{ padding:14px 12px 30px }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ===================== 登录 / 注册页 ===================== -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3.4 20 7.6v8.8L12 20.6 4 16.4V7.6z"/><path d="M4.6 7.9 12 12l7.4-4.1M12 12v8.1"/>
+      </svg>
+    </div>
+    <h1>居家智能医养监护系统</h1>
+    <div class="sub">智能手环 · 毫米波雷达 · 多模态融合感知</div>
+
+    <!-- 分页：登录 / 注册 -->
+    <div class="login-tabs">
+      <button class="login-tab on" id="tabLogin" type="button">登录</button>
+      <button class="login-tab" id="tabRegister" type="button">注册新账号</button>
+    </div>
+
+    <!-- 登录 -->
+    <form class="login-pane on" id="loginForm" autocomplete="off">
+      <div class="login-field">
+        <label for="loginUser">账号</label>
+        <input id="loginUser" type="text" placeholder="请输入账号" spellcheck="false">
+      </div>
+      <div class="login-field">
+        <label for="loginPass">密码</label>
+        <input id="loginPass" type="password" placeholder="请输入密码">
+      </div>
+      <button class="login-btn" type="submit" id="loginBtn">登 录</button>
+      <div class="login-err" id="loginErr"></div>
+    </form>
+
+    <!-- 注册 -->
+    <form class="login-pane" id="registerForm" autocomplete="off">
+      <div class="login-field">
+        <label for="regUser">账号</label>
+        <input id="regUser" type="text" placeholder="2–24 位，不含空格" spellcheck="false">
+      </div>
+      <div class="login-field">
+        <label for="regPass">密码</label>
+        <input id="regPass" type="password" placeholder="至少 6 位">
+      </div>
+      <div class="login-field">
+        <label for="regPass2">确认密码</label>
+        <input id="regPass2" type="password" placeholder="请再次输入密码">
+      </div>
+      <div class="login-field">
+        <label>身份</label>
+        <div class="role-pick" id="rolePick">
+          <button class="role-opt on" type="button" data-role="family">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 12.6a3.9 3.9 0 1 0 0-7.8 3.9 3.9 0 0 0 0 7.8zM4.6 20.2c.9-3.4 3.8-5.4 7.4-5.4s6.5 2 7.4 5.4"/>
+            </svg>
+            <span><span class="rn">家属 / 监护人</span><span class="rd">看完整监护数据</span></span>
+          </button>
+          <button class="role-opt" type="button" data-role="elder">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 12.6a3.9 3.9 0 1 0 0-7.8 3.9 3.9 0 0 0 0 7.8zM5.4 20.2c.6-3.1 3.2-5 6.6-5s6 1.9 6.6 5"/>
+            </svg>
+            <span><span class="rn">老人本人</span><span class="rd">手环端大字号</span></span>
+          </button>
+        </div>
+      </div>
+      <button class="login-btn" type="submit" id="regBtn">注 册</button>
+      <div class="login-err" id="regErr"></div>
+      <div class="login-ok" id="regOk"></div>
+    </form>
+
+    <div class="login-tip" id="loginTip">
+      <b>演示账号</b>：<code>demo</code> / <code>123456</code><br>
+      也可以 <span class="lk" id="tipToReg">注册一个新账号</span>——密码经 PBKDF2 加盐哈希后存库，不保存明文。
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 手环端（老人视角） ===================== -->
+<button class="band-close" id="bandClose">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18.4 5.6 5.6 18.4M5.6 5.6l12.8 12.8"/>
+  </svg>返回监护端
+</button>
+
+<div id="band">
+  <div class="band-stage">
+
+    <!-- 手环本体：跑道屏 + 上下表带 -->
+    <div class="wband">
+      <div class="wband-strap top"></div>
+
+      <div class="wband-body">
+        <div class="wband-screen">
+
+          <!-- 状态栏 -->
+          <div class="wb-status">
+            <span id="bandDate">--</span>
+            <span class="r">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b93a1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 8.6a13 13 0 0 1 18 0M6.6 12.2a8 8 0 0 1 10.8 0M10 15.8a3.4 3.4 0 0 1 4 0"/>
+              </svg>
+              <span class="wb-bat"><i></i></span>
+            </span>
+          </div>
+
+          <!-- 卡片区：左右滑动，一屏一件事（小米手环的卡片式导航） -->
+          <div class="wb-cards" id="wbCards">
+
+            <!-- ① 表盘 -->
+            <div class="wb-card">
+              <div class="wb-clock">
+                <div class="t" id="bandTime">--:--</div>
+                <div class="d" id="bandDay">--</div>
+                <div class="wx">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7d8697" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>
+                  </svg>
+                  <span id="bandWeather">晴 18℃ · 室外空气质量良</span>
+                </div>
+              </div>
+              <div class="wb-ring-wrap">
+                <div>
+                  <div class="wb-ring">
+                    <svg width="56" height="56" viewBox="0 0 56 56">
+                      <circle cx="28" cy="28" r="24" fill="none" stroke="#1f242c" stroke-width="5"/>
+                      <circle id="bandRing" cx="28" cy="28" r="24" fill="none" stroke="#3b82f6"
+                              stroke-width="5" stroke-linecap="round"
+                              stroke-dasharray="150.8" stroke-dashoffset="60"/>
+                    </svg>
+                    <div class="pc" id="bandRingPc">--</div>
+                  </div>
+                  <div class="lb">今日活动</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ② 心率 -->
+            <div class="wb-card" id="bandHrCard">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2.5 12H6l2.2-5.4 3.2 11L14 8.6l1.7 3.4H21.5"/>
+                </svg>心率
+              </div>
+              <div class="wb-metric">
+                <div class="ic" style="background:rgba(248,113,113,.15)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.5 12H6l2.2-5.4 3.2 11L14 8.6l1.7 3.4H21.5"/>
+                  </svg>
+                </div>
+                <div class="num"><span id="bandHr">--</span><small>bpm</small></div>
+                <div class="nm" id="bandHrNm">静息心率</div>
+                <div class="tag" id="bandHrTag">测量中…</div>
+              </div>
+              <div class="wb-spark" id="bandSpark"></div>
+            </div>
+
+            <!-- ③ 血氧 -->
+            <div class="wb-card" id="bandSpo2Card">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="8.1"/><path d="M12 12l5.6-3.3"/>
+                </svg>血氧
+              </div>
+              <div class="wb-metric">
+                <div class="ic" style="background:rgba(59,130,246,.15)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3.2c3.6 4 6 7.2 6 10a6 6 0 0 1-12 0c0-2.8 2.4-6 6-10z"/>
+                  </svg>
+                </div>
+                <div class="num"><span id="bandSpo2">--</span><small>%</small></div>
+                <div class="nm">血氧饱和度</div>
+                <div class="tag" id="bandSpo2Tag">测量中…</div>
+              </div>
+            </div>
+
+            <!-- ④ 位置与安全 -->
+            <div class="wb-card">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21s6.4-5.4 6.4-10.4A6.4 6.4 0 1 0 5.6 10.6C5.6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.4"/>
+                </svg>当前位置
+              </div>
+              <div class="wb-loc">
+                <div class="big" id="bandRoom">--</div>
+                <div class="sub" id="bandRoomSub">--</div>
+                <div class="pill" id="bandSafePill">环境安全</div>
+              </div>
+            </div>
+
+            <!-- ⑤ 今日用药 -->
+            <div class="wb-card">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="8.4" width="18" height="7.2" rx="3.6"/><path d="M12 8.4v7.2"/>
+                </svg>今日用药
+              </div>
+              <div class="wb-meds" id="bandMeds"></div>
+            </div>
+
+            <!-- ⑥ 家人留言 -->
+            <div class="wb-card">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.4 12a8.4 8.4 0 0 1-12.2 7.5L3.6 20.4l.9-4.6A8.4 8.4 0 1 1 20.4 12z"/>
+                </svg>家人留言
+              </div>
+              <div class="wb-msgs" id="bandMsgs"></div>
+            </div>
+
+            <!-- ⑦ 紧急呼救 -->
+            <div class="wb-card">
+              <div class="wb-title">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+                </svg>紧急呼救
+              </div>
+              <div class="wb-sos-wrap">
+                <button class="wb-sos" id="bandSos">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8.6"/><path d="M12 7.6v5.2M12 16.2h.01"/>
+                  </svg>
+                  <span class="l">SOS</span>
+                  <span class="s">按住或点击立即呼叫家属与社区</span>
+                </button>
+                <div class="wb-mini">
+                  <button id="bandCall">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15.6 20.4a13.4 13.4 0 0 1-12-12 2 2 0 0 1 2-2h2.4a1 1 0 0 1 1 .8l.7 3a1 1 0 0 1-.3 1L8 12.4a11 11 0 0 0 3.6 3.6l1.2-1.4a1 1 0 0 1 1-.3l3 .7a1 1 0 0 1 .8 1V18a2 2 0 0 1-2 2z"/>
+                    </svg>
+                    <span class="l">呼叫家属</span>
+                  </button>
+                  <button id="bandAck">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4.6 12.4 9.4 17.2 19.4 7.2"/>
+                    </svg>
+                    <span class="l">我很好</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 滑动指示点 -->
+          <div class="wb-dots" id="wbDots"></div>
+
+        </div>
+      </div>
+
+      <div class="wband-strap bot"></div>
+    </div>
+
+    <!-- 说明面板 -->
+    <div class="band-note">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.6"/><path d="M12 8.2v4.4M12 15.8h.01"/>
+        </svg>老人手环端
+      </h3>
+      <p>这是<b>最终交付形态</b>——老人手腕上的那块表。参照小米手环的卡片式交互重做：</p>
+      <ul>
+        <li><b>一屏一件事</b>：左右滑动翻卡片，不堆信息</li>
+        <li><b>表盘为原点</b>：抬手先看时间和活动环</li>
+        <li><b>颜色即结论</b>：绿正常 / 黄留意 / 红异常</li>
+        <li><b>大字大按钮</b>：SOS 一屏铺满，拇指够得到</li>
+        <li><b>循环滑动</b>：滑到最后一张回到第一张</li>
+      </ul>
+      <p style="margin-top:13px">
+        共 7 张卡片：表盘 · 心率 · 血氧 · 当前位置 · 今日用药 · 家人留言 · 紧急呼救。
+        数据与大屏<b>同源</b>，不额外请求，两端不会打架。
+      </p>
+      <p>
+        支持 <span class="kbd">←</span><span class="kbd">→</span> 翻页 ·
+        鼠标滚轮 · 触屏左右滑 · <span class="kbd">Esc</span> 返回监护端。
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ===================== 侧边导航 ===================== -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3.4 20 7.6v8.8L12 20.6 4 16.4V7.6z"/><path d="M4.6 7.9 12 12l7.4-4.1M12 12v8.1"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bt">居家智能监护</div>
+        <div class="bs">李奶奶 · 78岁</div>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nitem on" data-page="overview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.4" y="3.4" width="7.2" height="7.2" rx="1.6"/><rect x="13.4" y="3.4" width="7.2" height="7.2" rx="1.6"/>
+          <rect x="3.4" y="13.4" width="7.2" height="7.2" rx="1.6"/><rect x="13.4" y="13.4" width="7.2" height="7.2" rx="1.6"/>
+        </svg>概览</button>
+
+      <button class="nitem" data-page="vitals">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20s-6.6-4.4-6.6-9.6A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 6.6 3.2C18.6 15.6 12 20 12 20z"/>
+          <path d="M3.4 13.4h3.2l1.7-3.1 2.2 5.6 1.7-3.4 1.2 2.1h6.2"/>
+        </svg>体征与风险</button>
+
+      <button class="nitem" data-page="safety">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+          <path d="M9.2 12.2l2 2 3.6-3.8"/>
+        </svg>居家安全<span class="cnt" id="navSafetyCnt" style="display:none">0</span></button>
+
+      <button class="nitem" data-page="space">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.4 10.6 12 4l8.6 6.6"/><path d="M5.6 12.4v7.2h12.8v-7.2"/><path d="M10.2 19.6v-4.2h3.6v4.2"/>
+        </svg>空间与感知</button>
+
+      <button class="nitem" data-page="records">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8"/><path d="M12 7.4V12l3.2 2"/>
+        </svg>事件记录</button>
+
+      <button class="nitem" data-page="care">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.6 17.4V6.6A1.6 1.6 0 0 1 6.2 5h7.2l6 6v6.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6z"/>
+          <path d="M13.4 5v6h6"/>
+        </svg>照护服务</button>
+
+      <button class="nitem" data-page="console">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5.4V3.2M12 20.8v-2.2M5.4 12H3.2M20.8 12h-2.2"/>
+          <circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7"/>
+        </svg>演示控制台</button>
+    </nav>
+
+    <!-- 切换到老人手环端 -->
+    <button class="side-switch" id="btnBand" title="查看老人佩戴的手环界面">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="7.4" y="6.4" width="9.2" height="11.2" rx="2.6"/>
+        <path d="M9.6 6.4V3.4h4.8v3M9.6 17.6v3h4.8v-3"/>
+      </svg>
+      切换到手环端
+    </button>
+
+    <div class="side-foot">
+      <div>
+        <div class="st" style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span id="wsDot" style="width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0"></span>
+          <span id="wsStatus">连接中</span>
+        </div>
+        <div class="st">v1.3 · 本地模拟器</div>
+      </div>
+      <button class="tbtn" id="themeBtn" title="切换明暗主题">
+        <svg class="ic-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.4 14.2A8.6 8.6 0 0 1 9.8 3.6a8.6 8.6 0 1 0 10.6 10.6z"/>
+        </svg>
+        <svg class="ic-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== 主内容区 ===================== -->
+  <main class="main">
+
+    <!-- ========== 页 1：概览 ========== -->
+    <section class="page on" id="page-overview">
+      <div class="phead">
+        <div>
+          <h2>今日概览</h2>
+          <div class="psub">综合体征、居家安全、活动轨迹与近 1 小时事件</div>
+        </div>
+        <div class="pact">
+          <span class="scene-tag" id="sceneTag">场景：待启动</span>
+          <button class="btn pri" id="btnSosQuick" style="display:none"></button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-ring">
+          <svg width="112" height="112" viewBox="0 0 112 112">
+            <circle cx="56" cy="56" r="46" fill="none" stroke="var(--track)" stroke-width="7"/>
+            <circle id="scoreArc" cx="56" cy="56" r="46" fill="none" stroke="var(--ok)"
+                    stroke-width="7" stroke-linecap="round"
+                    stroke-dasharray="289" stroke-dashoffset="0"/>
+          </svg>
+          <div class="hin"><b id="scoreNum" class="num">--</b><span>安心分</span></div>
+        </div>
+        <div class="hero-meta">
+          <div class="ht" id="scoreTitle">正在评估老人今日状态…</div>
+          <div class="hs" id="scoreSub">综合体征、活动轨迹、居家安全与近 1 小时事件计算</div>
+          <div class="kpis" id="scoreKpis"><span class="kpi">等待数据…</span></div>
+        </div>
+        <div class="hero-arcs">
+          <div class="arc-each">
+            <svg width="46" height="46" viewBox="0 0 46 46" style="transform:rotate(-90deg)">
+              <circle cx="23" cy="23" r="18" fill="none" stroke="var(--track)" stroke-width="4"/>
+              <circle id="arcVital" cx="23" cy="23" r="18" fill="none" stroke="var(--ok)" stroke-width="4"
+                      stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0"/>
+            </svg>
+            <div class="al">体征</div>
+            <div class="av num" id="arcVitalTxt">—</div>
+          </div>
+          <div class="arc-each">
+            <svg width="46" height="46" viewBox="0 0 46 46" style="transform:rotate(-90deg)">
+              <circle cx="23" cy="23" r="18" fill="none" stroke="var(--track)" stroke-width="4"/>
+              <circle id="arcSafety" cx="23" cy="23" r="18" fill="none" stroke="var(--ok)" stroke-width="4"
+                      stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0"/>
+            </svg>
+            <div class="al">安全</div>
+            <div class="av num" id="arcSafetyTxt">—</div>
+          </div>
+          <div class="arc-each">
+            <svg width="46" height="46" viewBox="0 0 46 46" style="transform:rotate(-90deg)">
+              <circle cx="23" cy="23" r="18" fill="none" stroke="var(--track)" stroke-width="4"/>
+              <circle id="arcActive" cx="23" cy="23" r="18" fill="none" stroke="var(--ok)" stroke-width="4"
+                      stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0"/>
+            </svg>
+            <div class="al">活动</div>
+            <div class="av num" id="arcActiveTxt">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid4" style="margin-bottom:16px">
+        <div class="metric" id="m-hr">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 12H6l2.2-5.4 3.2 11L14 8.6l1.7 3.4H21.5"/>
+            </svg>心率</div>
+          <div class="mv num"><span id="v-hr">--</span><span class="mu">bpm</span></div>
+          <div class="mf" id="t-hr">等待数据</div>
+        </div>
+        <div class="metric" id="m-spo2">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8.1"/><path d="M12 12l5.6-3.3"/>
+            </svg>血氧</div>
+          <div class="mv num"><span id="v-spo2">--</span><span class="mu">%</span></div>
+          <div class="mf" id="t-spo2">等待数据</div>
+        </div>
+        <div class="metric" id="m-bp">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12h2.4l1.5-3.4 2.2 7 1.8-5 1.3 3.2H20"/>
+            </svg>血压</div>
+          <div class="mv num"><span id="v-bp">--/--</span><span class="mu">mmHg</span></div>
+          <div class="mf" id="t-bp">等待数据</div>
+        </div>
+        <div class="metric" id="m-temp">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.6 13.8V6.4a1.9 1.9 0 0 1 3.8 0v7.4a3.4 3.4 0 1 1-3.8 0z"/><path d="M12.5 9.6v4.6"/>
+            </svg>体温</div>
+          <div class="mv num"><span id="v-temp">--</span><span class="mu">°C</span></div>
+          <div class="mf" id="t-temp">等待数据</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+                <path d="M9.2 12.2l2 2 3.6-3.8"/>
+              </svg>居家安全
+            </div>
+            <span class="pill" id="safetyPill">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">甲烷浓度</span><span class="rv num" id="safetyGas">—</span></div>
+            <div class="gauge"><i id="barGas" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">烟雾指数</span><span class="rv num" id="safetySmoke">—</span></div>
+            <div class="gauge"><i id="barSmoke" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">水浸指数</span><span class="rv num" id="safetyWater">—</span></div>
+            <div class="gauge"><i id="barWater" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">所在房间</span><span class="rv" id="safetyRoom">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5.4 10.2v9.2M18.6 4.6v14.8"/>
+                <path d="M8.6 12.6H18.6a1.4 1.4 0 0 1 1.4 1.4v1.6a1.4 1.4 0 0 1-1.4 1.4H8.6a1.4 1.4 0 0 1-1.4-1.4v-1.6a1.4 1.4 0 0 1 1.4-1.4z"/>
+              </svg>门窗磁与声学
+            </div>
+            <span class="pill" id="doorPill">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">入户门</span><span class="rv" id="doorState">—</span></div>
+            <div class="rw"><span class="rk">窗户</span><span class="rv" id="windowState">—</span></div>
+            <div class="rw"><span class="rk">是否在家</span><span class="rv" id="homeState">—</span></div>
+            <div class="rw"><span class="rk">离家时长</span><span class="rv num" id="awaySec">—</span></div>
+            <div class="rw"><span class="rk">环境声压</span><span class="rv num" id="audioDb">—</span></div>
+            <div class="rw"><span class="rk">声学事件</span><span class="rv" id="audioEvent">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8"/><path d="M12 7.4V12l3.2 2"/>
+            </svg>最近事件
+          </div>
+          <span class="cm">按时间回溯</span>
+        </div>
+        <div class="timeline" id="timeline"><div class="empty">加载中…</div></div>
+      </div>
+    </section>
+
+    <!-- ========== 页 2：体征与风险 ========== -->
+    <section class="page" id="page-vitals">
+      <div class="phead">
+        <div>
+          <h2>体征与风险</h2>
+          <div class="psub">手环实时体征 · AI 风险指数与 30 分钟趋势预测</div>
+        </div>
+        <div class="pact"><span class="cm" id="lastUpdate" style="font-size:12px;color:var(--text-3)">--</span></div>
+      </div>
+
+      <div class="grid4" style="margin-bottom:16px">
+        <div class="metric" id="m-hr2">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2.5 12H6l2.2-5.4 3.2 11L14 8.6l1.7 3.4H21.5"/>
+            </svg>心率</div>
+          <div class="mv num"><span id="v-hr2">--</span><span class="mu">bpm</span></div>
+          <div class="mf" id="t-hr2">等待数据</div>
+        </div>
+        <div class="metric" id="m-spo2-2">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8.1"/><path d="M12 12l5.6-3.3"/>
+            </svg>血氧</div>
+          <div class="mv num"><span id="v-spo2-2">--</span><span class="mu">%</span></div>
+          <div class="mf" id="t-spo2-2">等待数据</div>
+        </div>
+        <div class="metric" id="m-bp2">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12h2.4l1.5-3.4 2.2 7 1.8-5 1.3 3.2H20"/>
+            </svg>血压</div>
+          <div class="mv num"><span id="v-bp2">--/--</span><span class="mu">mmHg</span></div>
+          <div class="mf" id="t-bp2">等待数据</div>
+        </div>
+        <div class="metric" id="m-temp2">
+          <div class="mh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.6 13.8V6.4a1.9 1.9 0 0 1 3.8 0v7.4a3.4 3.4 0 1 1-3.8 0z"/><path d="M12.5 9.6v4.6"/>
+            </svg>体温</div>
+          <div class="mv num"><span id="v-temp2">--</span><span class="mu">°C</span></div>
+          <div class="mf" id="t-temp2">等待数据</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.4 12h3.2l2.2-6 3.4 12 2.6-8 1.6 4h4.2"/>
+            </svg>实时健康趋势
+          </div>
+          <span class="cm" id="lastUpdate2">--</span>
+        </div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3.4 20 7.6v8.8L12 20.6 4 16.4V7.6z"/><path d="M12 12v8.1"/>
+            </svg>AI 健康风险指数
+          </div>
+          <span class="cm" id="riskForecast">评估中…</span>
+        </div>
+        <div class="risk-flex">
+          <div class="risk-gauge">
+            <div class="risk-num low num" id="riskNum">--</div>
+            <div class="risk-label" id="riskLabel">数据积累中</div>
+          </div>
+          <div class="risk-detail">
+            <div class="risk-bar"><div class="risk-bar-fill" id="riskBarFill"></div></div>
+            <div class="risk-factors" id="riskFactors"><span class="risk-chip">等待体征数据…</span></div>
+            <div class="risk-suggest" id="riskSuggest"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 页 3：居家安全 ========== -->
+    <section class="page" id="page-safety">
+      <div class="phead">
+        <div>
+          <h2>居家安全</h2>
+          <div class="psub">燃气 / 烟雾 / 漏水 · 声学呼救 · 融合判定证据链</div>
+        </div>
+      </div>
+
+      <div class="card" id="safetyTodoCard" style="display:none">
+        <div class="todo-line">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.2a4.6 4.6 0 0 0-4.6 4.6v6.2l-1.6 2.4h12.4l-1.6-2.4V8.8A4.6 4.6 0 0 0 12 4.2z"/>
+            <path d="M10.2 19.4a1.9 1.9 0 0 0 3.6 0"/>
+          </svg>
+          <span>本页有 <b id="safetyTodoNum">0</b> 条安全告警待处置，可在「事件记录」页点「我已响应」</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+              <path d="M9.2 12.2l2 2 3.6-3.8"/>
+            </svg>多模态融合判定
+          </div>
+          <span class="cm">雷达 × 手环 × 环境 三源交叉验证</span>
+        </div>
+        <div class="fusion-v" id="fusionVerdict" style="margin-bottom:6px">暂无融合事件</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="pill" id="fusionEvent">—</span>
+          <span class="cm" style="font-size:11.5px;color:var(--text-3)" id="fusionDetail">
+            融合置信度低于阈值或三源矛盾时自动抑制，压低单一传感器误报率。
+          </span>
+        </div>
+        <div class="src-grid" id="fusionGrid">
+          <div class="src-cell"><div class="sk">雷达姿态</div><div class="sv">—</div>
+            <div class="sbar"><i style="width:0%"></i></div></div>
+          <div class="src-cell"><div class="sk">手环生理</div><div class="sv">—</div>
+            <div class="sbar"><i style="width:0%"></i></div></div>
+          <div class="src-cell"><div class="sk">环境上下文</div><div class="sv">—</div>
+            <div class="sbar"><i style="width:0%"></i></div></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+                <path d="M9.2 12.2l2 2 3.6-3.8"/>
+              </svg>安全传感器
+            </div>
+            <span class="pill" id="safetyPill2">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">甲烷浓度</span><span class="rv num" id="safetyGas2">—</span></div>
+            <div class="gauge"><i id="barGas2" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">烟雾指数</span><span class="rv num" id="safetySmoke2">—</span></div>
+            <div class="gauge"><i id="barSmoke2" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">水浸指数</span><span class="rv num" id="safetyWater2">—</span></div>
+            <div class="gauge"><i id="barWater2" style="width:0%"></i></div>
+            <div class="rw"><span class="rk">所在房间</span><span class="rv" id="safetyRoom2">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4.2a4.6 4.6 0 0 0-4.6 4.6v6.2l-1.6 2.4h12.4l-1.6-2.4V8.8A4.6 4.6 0 0 0 12 4.2z"/>
+                <path d="M10.2 19.4a1.9 1.9 0 0 0 3.6 0"/>
+              </svg>声学感知
+            </div>
+            <span class="pill" id="doorPill2">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">环境声压</span><span class="rv num" id="audioDb2">—</span></div>
+            <div class="rw"><span class="rk">声学事件</span><span class="rv" id="audioEvent2">—</span></div>
+            <div class="rw"><span class="rk">识别方式</span><span class="rv">本地关键词唤醒</span></div>
+            <div class="rw"><span class="rk">原始音频</span><span class="rv">不上传</span></div>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:1.65">
+            老人倒地够不到 SOS 按钮时，语音呼救是唯一通道。仅在设备端识别关键词，原始音频不出户。
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5.4 10.2v9.2M18.6 4.6v14.8"/>
+              <path d="M8.6 12.6H18.6a1.4 1.4 0 0 1 1.4 1.4v1.6a1.4 1.4 0 0 1-1.4 1.4H8.6a1.4 1.4 0 0 1-1.4-1.4v-1.6a1.4 1.4 0 0 1 1.4-1.4z"/>
+            </svg>门窗磁 · 外出未归
+          </div>
+          <span class="cm" id="awayRuleHint">分级：温和提醒 → 二级关注 → 一级走失</span>
+        </div>
+        <div class="rows">
+          <div class="rw"><span class="rk">入户门</span><span class="rv" id="doorState2">—</span></div>
+          <div class="rw"><span class="rk">窗户</span><span class="rv" id="windowState2">—</span></div>
+          <div class="rw"><span class="rk">是否在家</span><span class="rv" id="homeState2">—</span></div>
+          <div class="rw"><span class="rk">离家时长</span><span class="rv num" id="awaySec2">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 页 4：空间与感知 ========== -->
+    <section class="page" id="page-space">
+      <div class="phead">
+        <div>
+          <h2>空间与感知</h2>
+          <div class="psub">房间级定位 · 毫米波雷达 · 环境传感器</div>
+        </div>
+        <div class="pact"><span class="cm" id="roomMeta" style="font-size:11.5px;color:var(--text-3)">卫生间久滞 &gt;45s 触发一级预警</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.4 10.6 12 4l8.6 6.6"/><path d="M5.6 12.4v7.2h12.8v-7.2"/><path d="M10.2 19.6v-4.2h3.6v4.2"/>
+            </svg>居家空间 · 房间定位
+          </div>
+          <span class="cm">非接触感知，无摄像头</span>
+        </div>
+        <div style="display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap">
+          <svg viewBox="0 0 320 200" style="flex:1 1 320px;min-width:260px;max-width:460px;height:auto">
+            <rect class="fp-room" id="fp-客厅" x="10" y="10" width="190" height="110" rx="5"/>
+            <text class="fp-label" id="fpl-客厅" x="105" y="65" text-anchor="middle" dominant-baseline="central">客厅</text>
+            <rect class="fp-room" id="fp-卧室" x="210" y="10" width="100" height="110" rx="5"/>
+            <text class="fp-label" id="fpl-卧室" x="260" y="65" text-anchor="middle" dominant-baseline="central">卧室</text>
+            <rect class="fp-room" id="fp-厨房" x="10" y="130" width="120" height="60" rx="5"/>
+            <text class="fp-label" id="fpl-厨房" x="70" y="160" text-anchor="middle" dominant-baseline="central">厨房</text>
+            <rect class="fp-room" id="fp-卫生间" x="140" y="130" width="170" height="60" rx="5"/>
+            <text class="fp-label" id="fpl-卫生间" x="225" y="160" text-anchor="middle" dominant-baseline="central">卫生间</text>
+          </svg>
+          <div style="flex:1 1 240px;min-width:210px">
+            <div style="font-size:14px">当前位置：<b id="roomName">--</b>
+              <span id="roomDwell" style="color:var(--text-3);font-size:12px;margin-left:6px"></span>
+            </div>
+            <div class="room-track" id="roomTrack"><span class="rt-chip">等待定位数据…</span></div>
+            <div class="fp-legend">
+              <span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>老人在此</span>
+              <span><i style="background:var(--danger-bg);border:1px solid var(--danger)"></i>停留超时</span>
+              <span><i style="background:var(--surface-2);border:1px solid var(--border-strong)"></i>无人</span>
+            </div>
+            <div class="brow" style="margin-top:16px">
+              <button class="btn" id="btnBathroom">卫生间久滞模拟</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5.4a6.6 6.6 0 0 0-6.6 6.6c0 3.6 2.4 6.6 6.6 6.6s6.6-3 6.6-6.6"/>
+                <path d="M12 2.6v7.6M12 5.4l2.6 2.6M12 5.4 9.4 8"/>
+              </svg>毫米波雷达
+            </div>
+            <span class="pill" id="radarPresent">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">人体存在</span><span class="rv" id="radarPresenceText">—</span></div>
+            <div class="rw"><span class="rk">在床判定</span><span class="rv" id="radarInBed">—</span></div>
+            <div class="rw"><span class="rk">体态</span><span class="rv" id="radarPosture">—</span></div>
+            <div class="rw"><span class="rk">呼吸率</span><span class="rv num" id="radarResp">—</span></div>
+            <div class="rw"><span class="rk">雷达心率</span><span class="rv num" id="radarHr">—</span></div>
+            <div class="rw"><span class="rk">所在房间</span><span class="rv" id="radarRoom">—</span></div>
+            <div class="rw"><span class="rk">微动强度</span><span class="rv num" id="radarMotionTxt">—</span></div>
+            <div class="gauge"><i id="radarMotionBar" style="width:0%"></i></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.6 13.8V6.4a1.9 1.9 0 0 1 3.8 0v7.4a3.4 3.4 0 1 1-3.8 0z"/>
+                <path d="M12.5 9.6v4.6"/>
+              </svg>环境传感器
+            </div>
+            <span class="pill" id="envScene">—</span>
+          </div>
+          <div class="rows">
+            <div class="rw"><span class="rk">室温</span><span class="rv num" id="envTemp">—</span></div>
+            <div class="rw"><span class="rk">湿度</span><span class="rv num" id="envHum">—</span></div>
+            <div class="rw"><span class="rk">水汽指数</span><span class="rv num" id="envVapor">—</span></div>
+            <div class="rw"><span class="rk">照度</span><span class="rv num" id="envIllu">—</span></div>
+            <div class="rw"><span class="rk">所处场景</span><span class="rv" id="envRoom">—</span></div>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:1.65">
+            水汽佐证卫浴场景，照度辅助夜间判定——为融合提供场景上下文。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 页 5：事件记录 ========== -->
+    <section class="page" id="page-records">
+      <div class="phead">
+        <div>
+          <h2>事件记录</h2>
+          <div class="psub">全部预警与处置回溯</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 4.2a4.6 4.6 0 0 0-4.6 4.6v6.2l-1.6 2.4h12.4l-1.6-2.4V8.8A4.6 4.6 0 0 0 12 4.2z"/>
+              <path d="M10.2 19.4a1.9 1.9 0 0 0 3.6 0"/>
+            </svg>实时预警
+          </div>
+          <span class="cm" id="alertCount">0 条</span>
+        </div>
+        <div class="alert-list" id="alertList"><div class="empty">暂无预警</div></div>
+      </div>
+    </section>
+
+    <!-- ========== 页 6：照护服务 ========== -->
+    <section class="page" id="page-care">
+      <div class="phead">
+        <div>
+          <h2>照护服务</h2>
+          <div class="psub">用药提醒 · 在线问诊 · 健康周报</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4.6" y="8.4" width="14.8" height="10.4" rx="2"/>
+                <path d="M12 4.6v3.2M10.4 12.4h3.2M12 10.8v3.2"/>
+              </svg>用药与慢病提醒
+            </div>
+          </div>
+          <div id="reminderList"><div class="empty">加载中...</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.6 5.4h14.8v10.4H12l-4.4 3.4v-3.4H4.6z"/>
+              </svg>线上问诊建议
+            </div>
+          </div>
+          <input id="symptomInput" placeholder="输入症状，如：头晕、胸闷" />
+          <div class="brow" style="margin-top:10px">
+            <button class="btn pri" id="btnAdvice">智能建议</button>
+            <button class="btn" id="btnAdviceAuto">基于最新数据</button>
+          </div>
+          <div id="adviceBox"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.6 17.4V6.6A1.6 1.6 0 0 1 6.2 5h7.2l6 6v6.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6z"/>
+              <path d="M13.4 5v6h6"/>
+            </svg>AI 健康周报
+          </div>
+          <span class="cm">近 7 天数据聚合分析</span>
+        </div>
+        <div class="brow"><button class="btn pri" id="btnWeekly">生成本周 AI 周报</button></div>
+        <div id="weeklyBox" class="report-box"></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20s-6.6-4.4-6.6-9.6A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 6.6 3.2C18.6 15.6 12 20 12 20z"/>
+            </svg>紧急呼救
+          </div>
+        </div>
+        <div class="sos-wrap">
+          <button class="sos-btn" id="btnSos">SOS</button>
+          <div class="sos-tip">点击立即通知家属 + 社区网格员<br/>并附带最近 5 分钟健康数据</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 页 7：演示控制台 ========== -->
+    <section class="page" id="page-console">
+      <div class="phead">
+        <div>
+          <h2>演示控制台</h2>
+          <div class="psub">一键触发异常场景，观察全链路判定</div>
+        </div>
+        <div class="pact">
+          <span class="scene-tag" id="radarTag">雷达：待启动</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="7"/>
+              <path d="M12 5.4V3.2M12 20.8v-2.2M5.4 12H3.2M20.8 12h-2.2"/>
+            </svg>模拟器控制
+          </div>
+          <span class="cm">常态循环：正常 → 心率↑ → 血氧↓ → 发热 → 睡眠</span>
+        </div>
+        <div class="console">
+          <button class="btn pri" id="btnSimStart">启动手环模拟器</button>
+          <button class="btn" id="btnSimStop">停止模拟器</button>
+          <button class="btn" id="btnPostureLoop">单独触发姿态识别</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20s-6.6-4.4-6.6-9.6A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 6.6 3.2C18.6 15.6 12 20 12 20z"/>
+              <path d="M3.4 13.4h3.2l1.7-3.1 2.2 5.6 1.7-3.4 1.2 2.1h6.2"/>
+            </svg>健康与姿态场景
+          </div>
+          <span class="cm">观察融合判定与升级倒计时</span>
+        </div>
+        <div class="console">
+          <button class="btn dgr" id="btnDemoFall">一键跌倒（三源同步）</button>
+          <button class="btn" id="btnDemoSuppress">误报抑制演示</button>
+          <button class="btn" id="btnDemoBed">夜间离床未归</button>
+        </div>
+        <div style="margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:1.65">
+          「一键跌倒」同步雷达跌倒信号 + 手环应激 + 姿态序列，融合判定为「确认告警」；
+          跌倒后 30s 无人响应自动升级处置，可在事件记录页点「我已响应」取消。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3.2 4.4 6.8v5c0 4.2 3.1 7.1 7.6 8.8 4.5-1.7 7.6-4.6 7.6-8.8v-5z"/>
+              <path d="M9.2 12.2l2 2 3.6-3.8"/>
+            </svg>居家安全场景
+          </div>
+          <span class="cm">v1.3 新增</span>
+        </div>
+        <div class="console">
+          <span class="scene-tag v13">安全感知</span>
+          <button class="btn dgr" id="btnDemoGas">燃气泄漏</button>
+          <button class="btn dgr" id="btnDemoVoice">语音呼救</button>
+          <button class="btn" id="btnDemoVoiceSup">声学误报抑制</button>
+        </div>
+        <div class="console">
+          <span class="scene-tag">外出未归</span>
+          <button class="btn" id="btnDemoAway">老人外出未归</button>
+          <button class="btn" id="btnAwayBack">已回家（复位）</button>
+        </div>
+        <div style="margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:1.65">
+          安全类传感器读数即事实，不套用生理三源取平均；声学事件叠加雷达在场判定，
+          可抑制电视、装修等环境音误触发。
+        </div>
+      </div>
+    </section>
+
+    <div class="foot">轻量化居家智能医养监护系统 v1.3 · 演示原型 · 数据由本地模拟器生成</div>
+  </main>
+</div>
+
+<!-- SOS 确认弹窗 -->
+<div class="modal-mask" id="sosModal">
+  <div class="modal">
+    <h3>确认触发 SOS 呼救？</h3>
+    <p>系统将立即向所有家属和社区网格员广播呼救信号，并附带最近 5 分钟健康数据上下文。</p>
+    <div class="actions">
+      <button class="btn" id="sosCancel">取消</button>
+      <button class="btn dgr" id="sosConfirm">立即呼救</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = location.origin; // 同源访问后端
+
+/* ============================================================
+   离线演示层（GitHub Pages 等无后端环境）
+   ------------------------------------------------------------
+   线上（有 Flask 后端）时：所有请求直连后端，本层不介入。
+   静态托管时：后端不存在，fetch 会失败 → 自动回退到随包的
+   demo-data.json 快照，让界面完整可用、数据真实。
+
+   写操作（POST）在离线模式下做**本地模拟**：更新内存中的状态并
+   返回一个与后端同构的响应，使按钮点击有真实反馈（如"已回家"
+   会让定位从「外出」切回房间）。这让静态演示也能讲清交互逻辑。
+   ============================================================ */
+const OFFLINE = {
+  active: false,      // 是否处于离线模式
+  ready: false,       // 快照是否已加载
+  snap: {},           // 快照数据（key = 接口路径）
+  state: {}           // 离线可变的运行时状态
+};
+
+/** 探测后端是否可用：超时很短，避免静态页面打开时长时间白屏 */
+async function detectBackend(){
+  try{
+    const ctl = new AbortController();
+    const t = setTimeout(()=>ctl.abort(), 1500);
+    const r = await fetch(API + '/api/health/latest/E001', {signal: ctl.signal});
+    clearTimeout(t);
+    if(!r.ok) throw new Error('bad status');
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+/** 加载静态快照 */
+async function loadSnapshot(){
+  try{
+    const r = await fetch('demo-data.json', {cache:'no-store'});
+    if(!r.ok) throw new Error('no snapshot');
+    const j = await r.json();
+    OFFLINE.snap = j.endpoints || {};
+    OFFLINE.ready = true;
+    // 初始化可变状态：从快照的当前值出发
+    OFFLINE.state = {
+      door: JSON.parse(JSON.stringify(OFFLINE.snap['/api/door/status'] || {})),
+      room: JSON.parse(JSON.stringify(OFFLINE.snap['/api/room/status?elder_id=E001'] || {})),
+      safety: JSON.parse(JSON.stringify(OFFLINE.snap['/api/safety/status'] || {})),
+      alerts: JSON.parse(JSON.stringify((OFFLINE.snap['/api/alert/?limit=20']||{}).data || [])),
+      acked: {},
+      away: false
+    };
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+/** 从快照中查找最匹配的接口响应（忽略 query 的 limit 等差异） */
+function snapLookup(path){
+  if(OFFLINE.snap[path] !== undefined) return OFFLINE.snap[path];
+  // 退化匹配：同路径不同 query
+  const base = path.split('?')[0];
+  for(const k of Object.keys(OFFLINE.snap)){
+    if(k.split('?')[0] === base) return OFFLINE.snap[k];
+  }
+  return undefined;
+}
+
+/** 构造一个与 fetch 响应同构的对象 */
+function jsonResponse(obj, status){
+  return {
+    ok: (status || 200) < 400,
+    status: status || 200,
+    json: async () => obj,
+    text: async () => JSON.stringify(obj)
+  };
+}
+
+/** 把各种形式的 URL 归一为以 /api/ 开头的路径 */
+function toApiPath(url){
+  if(!url) return '';
+  // 完整 URL → 取 pathname + search
+  const i = url.indexOf('/api/');
+  return i >= 0 ? url.slice(i) : url;
+}
+
+/** 离线模式下的写操作本地模拟 */
+function offlinePost(rawPath, body){
+  const path = toApiPath(rawPath);
+
+  // ---- 账号认证：离线时**必须失败**，不能返回假成功 ----
+  // 登录/注册的正确语义是「交给后端校验」。静态托管下后端不存在，
+  // 若这里回一个 {ok:true}，注册就变成了骗人的假成功（账号根本没地方存）。
+  // 因此显式抛出网络错误，让登录页的 catch 分支接管，
+  // 改用浏览器本地的 PBKDF2 账号库（见登录页 JS 的 localRegister/localLogin）。
+  if(path.startsWith('/api/auth/')){
+    throw new TypeError('offline: auth requires backend');
+  }
+  const st = OFFLINE.state;
+  const now = Date.now()/1000;
+
+  // ---- 离家 / 回家 ----
+  if(path.startsWith('/api/door/away')){
+    const flag = !path.includes('flag=0');
+    st.away = flag;
+    st.door.at_home = !flag;
+    st.door.away_sec = 0;
+    st.door.away_stage = flag ? 'normal' : 'normal';
+    st.room.away = flag;
+    st.room.room = flag ? '外出' : '客厅';
+    st.room.dwell_sec = 0;
+    // 雷达同步：离家时无人
+    const radar = OFFLINE.snap['/api/mmwave/status'];
+    if(radar){
+      if(flag){ radar.present=false; radar.scene='absent'; radar.room=null;
+                radar.respiration_rate=0; radar.heart_rate_radar=0; radar.posture='none'; }
+      else { radar.present=true; radar.scene='normal'; radar.room='客厅'; }
+    }
+    return jsonResponse({ok:true, force_away:flag, away_sec:0,
+      note: flag ? '已开启离家计时（离线演示）' : '已复位为在家状态（离线演示）'});
+  }
+
+  // ---- 室内动作：离家时拒绝（与后端语义一致）----
+  const indoor = [
+    ['/api/room/simulate_bathroom', '卫生间久滞'],
+    ['/api/demo/fall', '一键跌倒'],
+    ['/api/demo/out_of_bed', '夜间离床未归'],
+    ['/api/demo/voice', '语音呼救'],
+    ['/api/posture/simulate', '室内姿态']
+  ];
+  for(const [p, label] of indoor){
+    if(path.startsWith(p)){
+      if(st.away){
+        return jsonResponse({ok:false, rejected:true, reason:'elder_away',
+          error:`老人当前处于「外出」状态，不在家中，无法模拟「${label}」`,
+          hint:'请先点「已回家（复位）」或等老人回家后再试'}, 409);
+      }
+      if(path.startsWith('/api/room/simulate_bathroom')){
+        st.room.room = '卫生间'; st.room.away = false; st.room.dwell_sec = 0;
+      }
+      return jsonResponse({ok:true, note:'已触发（离线演示）'});
+    }
+  }
+
+  // ---- 房屋安全类：离家也正常执行 ----
+  if(path.startsWith('/api/demo/gas') || path.startsWith('/api/safety/simulate')){
+    if(path.includes('gas')) st.safety.gas_ppm = 3600;
+    if(path.includes('smoke')) st.safety.smoke = 0.45;
+    if(path.includes('water')) st.safety.water = 0.72;
+    st.safety.scene = path.includes('gas') ? 'gas_leak'
+                    : path.includes('smoke') ? 'smoke'
+                    : path.includes('water') ? 'water' : st.safety.scene;
+    st.safety.room = st.away ? '住所（位置未知）' : (st.safety.room || '厨房');
+    return jsonResponse({ok:true, note:'已触发（离线演示）'});
+  }
+  if(path.startsWith('/api/audio/simulate') || path.startsWith('/api/demo/voice_suppress')){
+    return jsonResponse({ok:true, note:'已触发（离线演示）'});
+  }
+  if(path.startsWith('/api/demo/suppress') || path.startsWith('/api/mmwave/simulate')){
+    return jsonResponse({ok:true, note:'已触发（离线演示）'});
+  }
+
+  // ---- 告警响应 ----
+  if(path.startsWith('/api/alert/') && path.includes('/ack')){
+    const id = parseInt(path.split('/')[3], 10);
+    st.acked[id] = true;
+    const a = st.alerts.find(x=>x.id===id);
+    if(a) a.status = 'ack';
+    return jsonResponse({ok:true});
+  }
+  if(path.startsWith('/api/sos/')){
+    return jsonResponse({ok:true, note:'SOS 已触发（离线演示）'});
+  }
+
+  // 其余写操作：默认成功，避免演示中断
+  return jsonResponse({ok:true, note:'离线演示模式'});
+}
+
+/** 安装 fetch 拦截 */
+function installOfflineFetch(){
+  const rawFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init){
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const method = ((init && init.method) || 'GET').toUpperCase();
+
+    // 静态资源（快照自身、CDN 等）不走拦截逻辑
+    const isApi = url.includes('/api/');
+    if(!isApi){
+      return rawFetch(input, init);
+    }
+
+    if(OFFLINE.active){
+      // 已进入离线模式：直接走本地
+      if(method === 'GET') return handleOfflineGet(url);
+      return offlinePost(url, init && init.body);
+    }
+
+    // 在线模式：先试真实请求，失败则切离线
+    try{
+      return await rawFetch(input, init);
+    }catch(e){
+      OFFLINE.active = true;
+      if(method === 'GET') return handleOfflineGet(url);
+      return offlinePost(url, init && init.body);
+    }
+  };
+}
+
+function handleOfflineGet(url){
+  const path = toApiPath(url);
+  const st = OFFLINE.state;
+  // 动态状态优先（离家/回家、告警响应等会改变这些）
+  if(path.startsWith('/api/door/status')) return jsonResponse(st.door);
+  if(path.startsWith('/api/room/status')) return jsonResponse(st.room);
+  if(path.startsWith('/api/safety/status')) return jsonResponse(st.safety);
+  if(path.startsWith('/api/alert/')){
+    const data = st.alerts.map(a=>st.acked[a.id] ? {...a, status:'ack'} : a);
+    return jsonResponse({data});
+  }
+  if(path.startsWith('/api/escalation/status')) return jsonResponse({data:[]});
+  const hit = snapLookup(path);
+  if(hit !== undefined) return jsonResponse(hit);
+  return jsonResponse({});
+}
+
+// 启动时探测并可能切换到离线模式
+(async function initDataLayer(){
+  await loadSnapshot();
+  const online = await detectBackend();
+  if(!online && OFFLINE.ready){
+    OFFLINE.active = true;
+    console.log('[demo] 未检测到后端，已切换到静态演示模式（数据来自 demo-data.json）');
+  }
+  installOfflineFetch();
+  // 暴露到 window，便于控制台调试与自动化测试断言
+  window.OFFLINE = OFFLINE;
+  window.dispatchEvent(new Event('datalayer-ready'));
+})();
+
+let alerts = [];
+const trendData = {labels:[], hr:[], spo2:[], bpSys:[]};
+const MAX_POINTS = 30;
+
+// ---- 图表初始化 ----
+const ctx = document.getElementById('trendChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type:'line',
+  data:{
+    labels:[],
+    datasets:[
+      {label:'心率',data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',tension:.3,yAxisID:'y'},
+      {label:'血氧',data:[],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.08)',tension:.3,yAxisID:'y1'},
+      {label:'收缩压',data:[],borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.08)',tension:.3,yAxisID:'y'}
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    scales:{
+      y:{position:'left',title:{display:true,text:'心率/血压'}},
+      y1:{position:'right',min:80,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'血氧%'}}
+    },
+    plugins:{legend:{labels:{boxWidth:12,font:{size:11}}}}
+  }
+});
+
+// ================= v1.3 安全感知 · 安心分 · 户型图 · 时间轴 =================
+const STATE = {safety:null, door:null, audio:null, room:null, latest:null, risk:null};
+const SAFETY_LIMIT = {gas:3000, gas_warn:1000, smoke:0.35, smoke_warn:0.15,
+                      water:0.60, water_warn:0.30};
+// 暴露给界面层（导航/细分弧）读取，避免界面代码拿不到脚本内私有常量
+window.STATE = STATE;
+window.SAFETY_LIMIT = SAFETY_LIMIT;
+
+// ---- 居家安全（燃气 / 烟雾 / 漏水）----
+function setGauge(barId, ratio, lv){
+  const b = document.getElementById(barId);
+  if(!b) return;
+  b.style.width = Math.round(Math.min(1, ratio)*100) + '%';
+  b.style.background = lv===2 ? 'var(--danger)' : lv===1 ? 'var(--warn)' : 'var(--ok)';
+}
+function updateSafety(f){
+  if(!f || f.gas_ppm===undefined) return;
+  STATE.safety = f;
+  document.getElementById('safetyGas').textContent = f.gas_ppm + ' ppm';
+  document.getElementById('safetySmoke').textContent = f.smoke;
+  document.getElementById('safetyWater').textContent = f.water;
+  document.getElementById('safetyRoom').textContent = f.room;
+
+  const lvGas = f.gas_ppm>=SAFETY_LIMIT.gas?2:(f.gas_ppm>=SAFETY_LIMIT.gas_warn?1:0);
+  const lvSmoke = f.smoke>=SAFETY_LIMIT.smoke?2:(f.smoke>=SAFETY_LIMIT.smoke_warn?1:0);
+  const lvWater = f.water>=SAFETY_LIMIT.water?2:(f.water>=SAFETY_LIMIT.water_warn?1:0);
+  setGauge('barGas', f.gas_ppm/SAFETY_LIMIT.gas, lvGas);
+  setGauge('barSmoke', f.smoke/SAFETY_LIMIT.smoke, lvSmoke);
+  setGauge('barWater', f.water/SAFETY_LIMIT.water, lvWater);
+
+  const lv = Math.max(lvGas, lvSmoke, lvWater);
+  const p = document.getElementById('safetyPill');
+  p.textContent = lv===2?'危险':lv===1?'注意':'正常';
+  p.className = 'pill ' + (lv===2?'bad':lv===1?'warn':'ok');
+  updateScore();
+}
+
+// ---- 门窗磁 + 声学 ----
+function updateDoor(f){
+  if(!f || f.at_home===undefined) return;
+  STATE.door = f;
+  document.getElementById('doorState').textContent = f.door_open?'开启':'关闭';
+  document.getElementById('windowState').textContent = f.window_open?'开启':'关闭';
+  document.getElementById('homeState').textContent = f.at_home?'在家':'外出中';
+  document.getElementById('awaySec').textContent =
+    f.at_home ? '—' : fmtDur(f.away_sec);
+  const p = document.getElementById('doorPill');
+  // 阶段决定药丸文案：正常外出不该显示成告警态
+  const st = f.away_stage;
+  if(f.at_home){ p.textContent = f.window_open?'开窗':'正常'; p.className='pill ok'; }
+  else if(st==='soft'){ p.textContent='外出较久'; p.className='pill warn'; }
+  else if(st==='away'){ p.textContent='未归'; p.className='pill warn'; }
+  else if(st==='lost'){ p.textContent='疑似走失'; p.className='pill bad'; }
+  else { p.textContent='外出中'; p.className='pill'; }
+  updateScore();
+}
+// 时长友好格式化：秒 → 「12 分钟」/「1 小时 5 分」
+function fmtDur(sec){
+  const s = Math.max(0, Math.floor(sec||0));
+  if(s < 90) return s + ' 秒';
+  const m = Math.floor(s/60);
+  if(m < 60) return m + ' 分钟';
+  const h = Math.floor(m/60), rm = m % 60;
+  return rm ? `${h} 小时 ${rm} 分` : `${h} 小时`;
+}
+function updateAudio(f){
+  if(!f || f.noise_db===undefined) return;
+  STATE.audio = f;
+  document.getElementById('audioDb').textContent = f.noise_db + ' dB';
+  const parts = [];
+  if(f.keyword_help) parts.push('呼救词');
+  if(f.glass_break) parts.push('玻璃碎裂');
+  if(f.thud) parts.push('重物落地');
+  const el = document.getElementById('audioEvent');
+  el.textContent = parts.length ? parts.join(' · ') : '无异常';
+  el.style.color = f.keyword_help ? 'var(--danger)' : (parts.length ? 'var(--warn)' : '');
+}
+
+// ---- 今日安心分（100 - 风险扣分）----
+function computeScore(){
+  const now = Date.now()/1000;
+  // 各项扣分分别封顶，避免单一维度（如历史事件堆积）把总分直接压死
+  let pEvent = 0, pVital = 0, pSafety = 0, pAway = 0;
+
+  // 事件：按等级计分但总扣分封顶 25（历史事件累积不应无限拉低当日分）
+  alerts.filter(a=>(now-(a.ts||0))<3600).forEach(a=>{
+    if(a.level==='L1'||a.level==='SOS') pEvent += 18;
+    else if(a.level==='L2') pEvent += 7;
+    else if(a.level==='L3') pEvent += 3;
+  });
+  pEvent = Math.min(25, pEvent);
+
+  // 体征：封顶 30
+  const r = STATE.latest;
+  if(r){
+    if(r.spo2!=null){ if(r.spo2<88) pVital+=15; else if(r.spo2<94) pVital+=5; }
+    if(r.heart_rate!=null && (r.heart_rate>110||r.heart_rate<45)) pVital+=12;
+    if(r.temperature!=null && (r.temperature>=37.5||r.temperature<=35.5)) pVital+=8;
+    if(r.systolic!=null && (r.systolic>=160||r.diastolic>=100)) pVital+=8;
+  }
+  pVital = Math.min(30, pVital);
+
+  // 居家安全：封顶 55（最高优先级，同时越限可接近归零）
+  const s = STATE.safety;
+  if(s){
+    if(s.gas_ppm>=SAFETY_LIMIT.gas) pSafety+=30;
+    else if(s.gas_ppm>=SAFETY_LIMIT.gas_warn) pSafety+=10;
+    if(s.smoke>=SAFETY_LIMIT.smoke) pSafety+=30;
+    else if(s.smoke>=SAFETY_LIMIT.smoke_warn) pSafety+=10;
+    if(s.water>=SAFETY_LIMIT.water) pSafety+=18;
+    else if(s.water>=SAFETY_LIMIT.water_warn) pSafety+=6;
+  }
+  pSafety = Math.min(55, pSafety);
+
+  // 离家：封顶 20
+  const d = STATE.door;
+  if(d && !d.at_home) pAway = Math.min(20, Math.floor((d.away_sec||0)/60)*8);
+
+  return Math.max(0, Math.round(100 - pEvent - pVital - pSafety - pAway));
+}
+function updateScore(){
+  const s = computeScore();
+  const color = s>=85 ? '#16a34a' : s>=70 ? '#f59e0b' : '#dc2626';
+  const num = document.getElementById('scoreNum');
+  num.textContent = s;
+  num.style.color = color;
+  const arc = document.getElementById('scoreArc');
+  arc.setAttribute('stroke', color);
+  arc.setAttribute('stroke-dashoffset', String((213.6*(1-s/100)).toFixed(1)));
+  const ttl = document.getElementById('scoreTitle');
+  ttl.textContent = s>=85 ? '今日状态良好，各项指标平稳'
+    : s>=70 ? '今日存在需关注项，建议留意'
+    : '今日风险偏高，建议尽快联系老人';
+  ttl.style.color = color;
+
+  const k = [];
+  const r = STATE.latest;
+  if(r && r.heart_rate!=null){
+    const ab = r.heart_rate>110||r.heart_rate<45;
+    k.push({t:`心率 ${r.heart_rate} ${ab?'异常':'正常'}`, c: ab?'bad':'ok'});
+    k.push(r.spo2<94 ? {t:`血氧 ${r.spo2}% 偏低`, c:'bad'}
+                     : {t:`血氧 ${r.spo2}% 正常`, c:'ok'});
+  }
+  const st = STATE.safety;
+  if(st){
+    const lv = Math.max(st.gas_ppm>=SAFETY_LIMIT.gas_warn?1:0,
+                        st.smoke>=SAFETY_LIMIT.smoke_warn?1:0,
+                        st.water>=SAFETY_LIMIT.water_warn?1:0);
+    k.push({t: lv?'居家安全异常':'居家安全正常', c: lv?'bad':'ok'});
+  }
+  if(STATE.door){
+    k.push(STATE.door.at_home ? {t:'老人在家', c:'ok'} : {t:'老人外出中', c:'warn'});
+  }
+  // 近 1 小时事件：按等级区分严重度，L1/SOS 才标红，避免历史 L3 累积显得刺眼
+  const recent = alerts.filter(a=>(Date.now()/1000-(a.ts||0))<3600);
+  const hi = recent.filter(a=>a.level==='L1'||a.level==='SOS').length;
+  const mid = recent.filter(a=>a.level==='L2').length;
+  const n1h = recent.length;
+  k.push({t:`近 1 小时事件 ${n1h} 条`,
+          c: hi>0?'bad':(mid>0?'warn':(n1h>0?'ok':'ok'))});
+  document.getElementById('scoreKpis').innerHTML =
+    k.map(x=>`<span class="score-kpi ${x.c}">${x.t}</span>`).join('');
+}
+
+// ---- 户型图定位 ----
+const FP_ROOMS = ['客厅','卧室','厨房','卫生间'];
+function renderFloorplan(room, danger){
+  FP_ROOMS.forEach(r=>{
+    const rect = document.getElementById('fp-'+r);
+    const lbl = document.getElementById('fpl-'+r);
+    if(!rect) return;
+    // room 为空字符串表示老人不在屋内（外出），所有房间统一取消高亮
+    const on = !!room && (r===room);
+    rect.setAttribute('class', 'fp-room' + (on ? (danger?' danger':' active') : ''));
+    if(lbl) lbl.setAttribute('class', 'fp-label' + (on ? (danger?' danger':' active') : ''));
+  });
+}
+
+// ---- 今日事件时间轴 ----
+function renderTimeline(){
+  const box = document.getElementById('timeline');
+  const items = alerts.slice(0,14);
+  if(!items.length){ box.innerHTML='<div class="empty">今日暂无事件记录</div>'; return; }
+  box.innerHTML = items.map(a=>{
+    const cls = (a.level==='L1'||a.level==='SOS') ? 'danger' : (a.level==='L2'?'warn':'ok');
+    return `<div class="tl-item ${cls}"><span class="tt">${fmtTime(a.ts)}</span>${a.message}</div>`;
+  }).join('');
+}
+
+async function pollSafety(){
+  try{ updateSafety(await fetch(API+'/api/safety/status').then(r=>r.json())); }catch(e){}
+}
+async function pollDoor(){
+  try{ updateDoor(await fetch(API+'/api/door/status').then(r=>r.json())); }catch(e){}
+}
+async function pollAudio(){
+  try{ updateAudio(await fetch(API+'/api/audio/status').then(r=>r.json())); }catch(e){}
+}
+
+// ---- 通用：室内演示动作（外出时后端会拒绝，前端如实提示）----
+// 「老人外出」与「老人在室内发生事件」互斥。这类按钮点击时若老人已外出，
+// 后端返回 409；前端不能谎报成功，须提示原因并高亮「已回家（复位）」。
+// 注：燃气/烟雾/水浸不属此类（房屋属性，人不在家也应能报），故不使用本 helper。
+async function indoorDemo(url, okMsg, okType){
+  if(STATE.door && STATE.door.at_home === false){
+    toast('老人当前处于「外出」状态，不在家中，该演示不适用。请先点「已回家（复位）」。','danger');
+    const rb = document.getElementById('btnAwayBack');
+    if(rb){
+      rb.style.transition = 'box-shadow .2s';
+      rb.style.boxShadow = '0 0 0 3px rgba(220,38,38,.35)';
+      setTimeout(()=>{ rb.style.boxShadow = ''; }, 1600);
+    }
+    return false;
+  }
+  let res = null, bad = false;
+  try{
+    const r = await fetch(API + url, {method:'POST'});
+    res = await r.json().catch(()=>null);
+    if(!r.ok) bad = true;
+  }catch(e){ bad = true; }
+  if(bad || !res || res.ok === false){
+    toast((res && res.error) || '演示未执行：老人当前不在家中','danger');
+    return false;
+  }
+  toast(okMsg, okType || 'warn');
+  return true;
+}
+window.indoorDemo = indoorDemo;
+
+// ---- v1.3 安全感知演示按钮 ----
+// 燃气泄漏：**不加离家守卫**。老人出门忘关火是最典型的居家事故，
+// 房屋本身的安全属性与人是否在家无关，外出时反而更该监测。
+document.getElementById('btnDemoGas').onclick = async ()=>{
+  const away = !!(STATE.door && STATE.door.at_home === false);
+  await fetch(API+'/api/demo/gas?hold_sec=30',{method:'POST'});
+  toast(away
+    ? '已模拟「外出期间」燃气泄漏：老人忘关灶具，安全传感器越限并通知家属'
+    : '已模拟厨房燃气泄漏：安全传感器 + 环境上下文 + 雷达在场，三源同步',
+    'danger');
+  pollSafety(); pollDoor(); pollEnv();
+};
+document.getElementById('btnDemoVoice').onclick = async ()=>{
+  await indoorDemo('/api/demo/voice?hold_sec=20',
+                   '已模拟语音呼救：声学识别到呼救词 + 雷达确认有人','danger');
+};
+document.getElementById('btnDemoVoiceSup').onclick = async ()=>{
+  await fetch(API+'/api/demo/voice_suppress?hold_sec=20',{method:'POST'});
+  toast('已模拟声学误报：有呼救声但雷达显示室内无人，融合应「降级核实」','info');
+};
+document.getElementById('btnDemoAway').onclick = async ()=>{
+  await fetch(API+'/api/demo/away',{method:'POST'});
+  const r = await loadAwayRules();
+  const t = r ? r.thresholds : null;
+  toast(t ? `已开启离家计时：超 ${Math.round(t.soft)}s 温和提醒，超 ${Math.round(t.away)}s 二级关注，超 ${Math.round(t.lost)}s 一级走失`
+           : '已开启离家计时', 'warn');
+  loadAwayRules();
+};
+document.getElementById('btnAwayBack').onclick = async ()=>{
+  await fetch(API+'/api/door/away?flag=0',{method:'POST'});
+  toast('已复位为「在家」状态','info');
+  pollDoor(); pollRoom(); pollRadar(); pollSafety();
+};
+
+// 拉取当前生效的外出阈值并渲染到提示条，避免界面写死数字
+async function loadAwayRules(){
+  try{
+    const r = await fetch(API+'/api/door/active_rules').then(x=>x.json());
+    window.__awayRules = r;   // 供活动弧等处复用真实阈值
+    const hint = document.getElementById('awayRuleHint');
+    if(hint){
+      const f = s => s>=90 ? Math.round(s/60)+' 分钟' : Math.round(s)+' 秒';
+      hint.textContent =
+        `${r.night?'夜间':'白天'}：超 ${f(r.thresholds.soft)} 温和提醒 · `
+        + `超 ${f(r.thresholds.away)} 二级关注 · 超 ${f(r.thresholds.lost)} 一级走失`;
+      hint.style.color = '';
+    }
+    return r;
+  }catch(e){ return null; }
+}
+
+// ---- 工具 ----
+function fmtTime(ts){
+  // 防御非法时间戳：后端补推/回放的事件可能缺 ts，避免界面显示 NaN:NaN:NaN
+  const n = Number(ts);
+  if(!isFinite(n) || n<=0) return '--:--:--';
+  const d = new Date(n*1000);
+  if(isNaN(d.getTime())) return '--:--:--';
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+function toast(msg, type='info'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type==='danger'?'danger':type==='warn'?'warn':'');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+// ---- 更新健康指标 ----
+function updateMetrics(rec){
+  if(!rec || !rec.heart_rate) return;
+  STATE.latest = rec;
+  document.getElementById('v-hr').textContent = rec.heart_rate;
+  document.getElementById('v-spo2').textContent = rec.spo2;
+  document.getElementById('v-bp').textContent = rec.systolic+'/'+rec.diastolic;
+  document.getElementById('v-temp').textContent = rec.temperature;
+  document.getElementById('lastUpdate').textContent = '更新于 '+fmtTime(rec.ts);
+  document.getElementById('sceneTag').textContent = '场景：'+(rec.scene||'未知');
+
+  // 异常高亮
+  toggleAlert('m-hr', rec.heart_rate>110||rec.heart_rate<45);
+  toggleAlert('m-spo2', rec.spo2<88);
+  toggleAlert('m-bp', rec.systolic>=160||rec.diastolic>=100);
+  toggleAlert('m-temp', rec.temperature>=37.5||rec.temperature<=35.5);
+
+  // 图表数据
+  const lbl = fmtTime(rec.ts);
+  trendData.labels.push(lbl);
+  trendData.hr.push(rec.heart_rate);
+  trendData.spo2.push(rec.spo2);
+  trendData.bpSys.push(rec.systolic);
+  if(trendData.labels.length>MAX_POINTS){
+    trendData.labels.shift(); trendData.hr.shift();
+    trendData.spo2.shift(); trendData.bpSys.shift();
+  }
+  chart.data.labels = trendData.labels;
+  chart.data.datasets[0].data = trendData.hr;
+  chart.data.datasets[1].data = trendData.spo2;
+  chart.data.datasets[2].data = trendData.bpSys;
+  chart.update('none');
+  updateScore();
+}
+function toggleAlert(id, on){
+  document.getElementById(id).classList.toggle('alert', on);
+}
+
+// ---- 渲染预警 ----
+const LEVEL_NAME = {L1:'一级·紧急', L2:'二级·关注', L3:'三级·趋势', SOS:'SOS'};
+function whoText(a){
+  const names={family:'家属',community:'社区网格员',doctor:'签约医生',self:'本人',emergency:'120急救'};
+  if(a.channels&&a.channels.length)
+    return '推送：'+a.channels.map(c=>names[c]||c).join(' + ');
+  if(a.level==='L1'||a.level==='SOS') return '推送：家属 + 社区网格员';
+  if(a.level==='L2') return '推送：家属';
+  if(a.level==='L3') return '推送：家属 + 签约医生';
+  return '';
+}
+function renderAlerts(){
+  const box = document.getElementById('alertList');
+  document.getElementById('alertCount').textContent = alerts.length+' 条';
+  // 过滤掉无 message 的脏数据条目：后端历史库中可能存在缺字段记录，
+  // 直接渲染会产出空白卡片，观感极差
+  const rows = alerts.filter(a=>a && String(a.message||'').trim()).slice(0,20);
+  if(!rows.length){box.innerHTML='<div class="empty">暂无预警</div>';return}
+  box.innerHTML = rows.map(a=>{
+    const who = whoText(a);
+    const esc = escMap[a.id];
+    const urgent = (a.level==='L1'||a.level==='SOS');
+    const ack = a.status==='ack';
+    // 未响应 → 显示"待响应"或升级倒计时；已响应 → 显示"已响应处置"。
+    // 注意：不能把"无倒计时"等同于"已响应"，否则未响应条目会被误标为已处置。
+    const showAck = (urgent || a.category==='fall' || a.category==='fall_no_response'
+                     || a.category==='bathroom_dwell');
+    const lvl = a.level==='SOS' ? 'sos'
+              : a.level==='L1' ? 'l1'
+              : a.level==='L2' ? 'l2'
+              : a.level==='L3' ? 'l3' : 'l3';
+    // 状态徽标文案：有升级倒计时 → 倒计时；已响应 → 已响应处置；其余未响应 → 待响应
+    let stateHtml = '';
+    if(ack){
+      stateHtml = `<span class="esc-cd done">已响应处置</span>`;
+    } else if(esc){
+      stateHtml = `<span class="esc-cd">无响应升级倒计时 ${Math.ceil(esc.remaining)}s</span>`;
+    } else if(showAck){
+      stateHtml = `<span class="esc-cd pending">待响应</span>`;
+    }
+    return `
+    <div class="al ${lvl}${ack?' ack':''}">
+      <div class="atop">
+        <span class="tag tag-${a.level}">${LEVEL_NAME[a.level]||a.level}</span>
+        <span class="ats">${fmtTime(a.ts)}</span>
+      </div>
+      <div class="amsg">${a.message}</div>
+      ${who?`<div class="awho ${urgent&&!ack?'urgent':''}">${who}</div>`:''}
+      ${(stateHtml||!ack&&showAck)?`<div class="esc-line">
+        ${stateHtml}
+        ${!ack?`<button class="ack-btn" onclick="ackAlert(${a.id})">我已响应</button>`:''}
+      </div>`:''}
+    </div>`;}).join('');
+  updateScore();
+  renderTimeline();
+}
+function addAlert(a){
+  alerts.unshift(a);
+  if(a.level==='L1'||a.level==='SOS'){
+    toast(a.message,'danger');
+  } else if(a.level==='L2'){
+    toast(a.message,'warn');
+  } else if(a.level==='L3'){
+    toast(a.message,'info');
+  }
+  renderAlerts();
+}
+async function ackAlert(id){
+  await fetch(API+`/api/alert/${id}/ack`,{method:'POST'});
+  const a = alerts.find(x=>x.id===id);
+  if(a) a.status='ack';
+  renderAlerts();
+  toast('已响应，升级倒计时已取消','info');
+}
+window.ackAlert = ackAlert;
+
+// ---- 提醒 ----
+async function loadReminders(){
+  const r = await fetch(API+'/api/reminder/E001').then(r=>r.json());
+  const box = document.getElementById('reminderList');
+  const list = (r.data||[]).slice();
+
+  // 去重：同一 (类型, 名称, 时间) 只保留一条，防止历史脏数据重复显示
+  const seen = {}, uniq = [];
+  list.forEach(function(x){
+    const c = x.content || {};
+    const k = [x.type, c.name, x.schedule].join('|');
+    if(seen[k]){ seen[k].ack = seen[k].ack && x.ack; return; }
+    seen[k] = x; uniq.push(x);
+  });
+
+  if(!uniq.length){ box.innerHTML = '<div class="empty">无提醒任务</div>'; return; }
+
+  // 按时间排序，再按时间分组成「时段」
+  uniq.sort(function(a,b){ return String(a.schedule).localeCompare(String(b.schedule)); });
+  const groups = [];
+  uniq.forEach(function(x){
+    const last = groups[groups.length-1];
+    if(last && last.time === x.schedule) last.items.push(x);
+    else groups.push({time:x.schedule, items:[x]});
+  });
+
+  const ICON_MED = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    + '<rect x="4.4" y="8.6" width="15.2" height="10" rx="2.2"/><path d="M12 4.6v4M10.6 13.6h2.8M12 12.2v2.8"/></svg>';
+  const ICON_CHR = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M4.6 17.4V6.6A1.6 1.6 0 0 1 6.2 5h7.2l6 6v6.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6z"/>'
+    + '<path d="M9.4 12.6h5.2M12 10v5.2"/></svg>';
+  const ICON_DONE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M4.8 12.6l4.6 4.6L19.2 7.4"/></svg>';
+
+  // 时段中文标签
+  function slotLabel(t){
+    const h = parseInt(String(t).slice(0,2), 10);
+    if(h < 11) return '早晨';
+    if(h < 14) return '午间';
+    if(h < 18) return '下午';
+    return '晚间';
+  }
+
+  box.innerHTML = groups.map(function(g){
+    const allDone = g.items.every(function(x){ return x.ack; });
+    const rows = g.items.map(function(x){
+      const c = x.content || {};
+      const isMed = x.type === 'medication';
+      const label = c.name || '提醒';
+      const dose = c.dose ? '<span class="dose">' + c.dose + '</span>' : '';
+      const act = x.ack
+        ? '<span class="rm-ok">' + ICON_DONE.replace('stroke-width="2.2"',
+            'stroke="#fff" stroke-width="2.6"') + '<span>已完成</span></span>'
+        : '<button onclick="ackReminder(' + x.id + ')">' + (isMed ? '确认服药' : '记录指标') + '</button>';
+      return '<div class="rm ' + (isMed ? 'med' : 'chronic') + (x.ack ? ' done' : '') + '">'
+        + '<div class="rm-ic">' + (isMed ? ICON_MED : ICON_CHR)
+        +   (x.ack ? '<span class="rm-tick">' + ICON_DONE + '</span>' : '')
+        + '</div>'
+        + '<div class="rm-bd">'
+        +   '<div class="rmt">' + label + dose + '</div>'
+        +   '<div class="rms">'
+        +     '<span class="rm-tag">' + (isMed ? '用药' : '慢病') + '</span>'
+        +     '<span>' + g.time + '</span>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="rm-act">' + act + '</div>'
+        + '</div>';
+    }).join('');
+    return '<div class="rm-day">' + slotLabel(g.time) + ' · ' + g.time
+      + '<span class="rm-cnt">' + g.items.length + ' 项'
+      + (allDone ? ' · 已完成' : '') + '</span></div>' + rows;
+  }).join('');
+}
+async function ackReminder(id){
+  await fetch(API+`/api/reminder/${id}/ack`,{method:'POST'});
+  toast('提醒已确认','info');
+  loadReminders();
+}
+window.ackReminder = ackReminder;
+
+// ---- 控制台按钮 ----
+document.getElementById('btnSimStart').onclick = async ()=>{
+  await fetch(API+'/api/simulator/start',{method:'POST'});
+  toast('手环模拟器已启动','info');
+};
+document.getElementById('btnSimStop').onclick = async ()=>{
+  await fetch(API+'/api/simulator/stop',{method:'POST'});
+  toast('模拟器已停止','warn');
+};
+document.getElementById('btnPostureLoop').onclick = async ()=>{
+  await fetch(API+'/api/posture/simulate_loop',{method:'POST'});
+  toast('姿态识别演示已触发，请观察预警列表','warn');
+};
+
+// ---- SOS ----
+document.getElementById('btnSos').onclick = ()=>document.getElementById('sosModal').classList.add('show');
+document.getElementById('sosCancel').onclick = ()=>document.getElementById('sosModal').classList.remove('show');
+document.getElementById('sosConfirm').onclick = async ()=>{
+  document.getElementById('sosModal').classList.remove('show');
+  const r = await fetch(API+'/api/sos/trigger',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({location:'客厅'})
+  }).then(r=>r.json());
+  toast('SOS 已触发，已广播家属与社区','danger');
+};
+
+// ---- 问诊 ----
+document.getElementById('btnAdvice').onclick = async ()=>{
+  const s = document.getElementById('symptomInput').value.trim();
+  if(!s){toast('请输入症状','warn');return}
+  const r = await fetch(API+'/api/consult/symptom',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({symptom:s})
+  }).then(r=>r.json());
+  renderAdvice(r.advice, r.level);
+};
+document.getElementById('btnAdviceAuto').onclick = async ()=>{
+  const r = await fetch(API+'/api/consult/advice/E001').then(r=>r.json());
+  renderAdvice(r.advice, r.level);
+};
+function renderAdvice(advice, level){
+  const box = document.getElementById('adviceBox');
+  const cls = level==='urgent'?'urgent':(level==='warning'||level==='warn'?'warn':'');
+  box.className = 'advice-box '+cls;
+  box.innerHTML = '<b>建议：</b>'+advice;
+}
+
+// ---- AI 健康风险指数 ----
+function updateRisk(r){
+  if(!r || r.index===null || r.index===undefined) return;
+  const num = document.getElementById('riskNum');
+  num.textContent = r.index;
+  num.className = 'risk-num ' + (r.level||'low');
+  document.getElementById('riskLabel').textContent = r.label || '--';
+  const fill = document.getElementById('riskBarFill');
+  fill.style.width = Math.min(100, r.index) + '%';
+  fill.style.background = r.level==='high'?'var(--danger)':r.level==='medium'?'var(--warn)':'var(--ok)';
+  const fc = r.forecast_30min || {};
+  document.getElementById('riskForecast').textContent =
+    fc.index!=null ? `预测 30 分钟后：${fc.index}（${fc.direction}）` : (r.trend ? `趋势：${r.trend}` : '评估中…');
+  const fx = document.getElementById('riskFactors');
+  fx.innerHTML = (r.factors&&r.factors.length)
+    ? r.factors.slice(0,5).map(f=>`<span class="risk-chip">${f.name} ${f.score}分 · ${f.detail}</span>`).join('')
+    : '<span class="risk-chip" style="background:#ecfdf5;color:#047857;border-color:#a7f3d0">各项体征正常</span>';
+  document.getElementById('riskSuggest').textContent = r.suggestion||'';
+}
+
+// ---- 房间级电子围栏 ----
+let roomHistory = [];
+function updateRoom(st){
+  if(!st || !st.room) return;
+  STATE.room = st;
+  const away = !!st.away;
+  // 轨迹以后端为准（后端在离家时会追加「外出」，前端不再自行拼装，
+  // 否则手环仍在室内随机换房间，轨迹会与"已外出"矛盾）
+  if(Array.isArray(st.track) && st.track.length){
+    roomHistory = st.track.slice(-8);
+  } else if(roomHistory[0] !== st.room){
+    roomHistory.unshift(st.room);
+    roomHistory = roomHistory.slice(0,8);
+  }
+  const nameEl = document.getElementById('roomName');
+  nameEl.textContent = away ? '外出' : st.room;
+  nameEl.style.color = away ? 'var(--warn)' : '';
+  const dwellEl = document.getElementById('roomDwell');
+  dwellEl.textContent = away ? '离家计时中' : `已停留 ${Math.floor(st.dwell_sec)}s`;
+  dwellEl.style.color = away ? 'var(--warn)' : '';
+  document.getElementById('roomTrack').innerHTML = roomHistory.map(r=>
+    `<span class="rt-chip ${r===st.room?'cur':''} ${r==='卫生间'?'bath':''} ${r==='外出'?'away':''}">${r}</span>`).join('');
+  // 离家时不在户型图上标任何房间（人不在屋内），避免"客厅高亮但已外出"
+  const danger = !away && ((st.room==='卫生间' && st.dwell_sec>=45) || st.dwell_sec>=600);
+  renderFloorplan(away ? '' : st.room, danger);
+}
+async function pollRoom(){
+  try{ updateRoom(await fetch(API+'/api/room/status').then(r=>r.json())); }catch(e){}
+}
+document.getElementById('btnBathroom').onclick = async ()=>{
+  // 互斥前置校验：人已外出就不可能在卫生间久滞。
+  // 这里先在本地拦一道，给出即时反馈；后端同样会校验（409），双重保险。
+  const away = !!(STATE.door && STATE.door.at_home === false);
+  if(away){
+    toast('老人当前处于「外出」状态，不在家中，无法模拟卫生间久滞。请先点「已回家（复位）」。','danger');
+    // 高亮一下复位按钮，指明下一步该点哪里
+    const rb = document.getElementById('btnAwayBack');
+    if(rb){
+      rb.style.transition = 'box-shadow .2s';
+      rb.style.boxShadow = '0 0 0 3px rgba(220,38,38,.35)';
+      setTimeout(()=>{ rb.style.boxShadow = ''; }, 1600);
+    }
+    return;
+  }
+  let res = null, httpErr = false;
+  try{
+    const r = await fetch(API+'/api/room/simulate_bathroom',{method:'POST'});
+    res = await r.json().catch(()=>null);
+    if(!r.ok) httpErr = true;
+  }catch(e){ httpErr = true; }
+  // 后端拒绝（例如状态刚好在这几十毫秒内变成外出）：如实提示，不谎报成功
+  if(httpErr || !res || res.ok === false){
+    toast((res && res.error) || '模拟失败：老人当前不在家中，无法模拟卫生间久滞','danger');
+    pollRoom(); pollDoor(); pollRadar();
+    return;
+  }
+  toast('已模拟老人进入卫生间，超过 45s 将触发一级（紧急）久滞预警','warn');
+  // 立即刷新定位/门磁/雷达，避免界面停留在一个已过时的快照上
+  pollRoom(); pollDoor(); pollRadar();
+};
+
+// ---- 毫米波雷达（非接触感知）----
+const POSTURE_CN = {standing:'站立', sitting:'坐姿', lying:'平躺', none:'未检出'};
+function updateRadar(f){
+  if(!f || !f.elder_id) return;
+  const pill = document.getElementById('radarPresent');
+  pill.textContent = f.present ? '检出人体' : '无人';
+  pill.className = 'pill ' + (f.present ? 'ok' : '');
+  document.getElementById('radarPresenceText').textContent = f.present ? '有人' : '无人';
+  document.getElementById('radarInBed').textContent = f.in_bed ? '在床' : '离床';
+  document.getElementById('radarPosture').textContent = POSTURE_CN[f.posture]||f.posture;
+  document.getElementById('radarResp').textContent = f.respiration_rate ? f.respiration_rate+' 次/分' : '—';
+  document.getElementById('radarHr').textContent = f.heart_rate_radar ? f.heart_rate_radar+' bpm' : '—';
+  document.getElementById('radarRoom').textContent = f.room || '—';
+  const m = Math.round((f.motion_level||0)*100);
+  document.getElementById('radarMotionTxt').textContent = m + '%';
+  document.getElementById('radarMotionBar').style.width = m + '%';
+  const tag = document.getElementById('radarTag');
+  if(tag){
+    tag.textContent = '雷达：' + (f.fall_signal ? '检出跌倒信号！' : (POSTURE_CN[f.posture]||'') +
+      (f.present ? ' · 呼吸 '+f.respiration_rate : ' · 无人'));
+    tag.style.color = f.fall_signal ? 'var(--danger)' : '';
+  }
+}
+async function pollRadar(){
+  try{ updateRadar(await fetch(API+'/api/mmwave/status').then(r=>r.json())); }catch(e){}
+}
+
+// ---- 环境传感器 ----
+function updateEnv(f){
+  if(!f || f.temperature===undefined) return;
+  document.getElementById('envTemp').textContent = f.temperature + ' °C';
+  document.getElementById('envHum').textContent = f.humidity + ' %';
+  const vp = document.getElementById('envVapor');
+  vp.textContent = f.vapor;
+  vp.style.color = f.vapor>=0.6 ? 'var(--danger)' : '';
+  document.getElementById('envIllu').textContent = Math.round(f.illuminance) + ' lux';
+  document.getElementById('envRoom').textContent = f.room + ' · ' + (f.scene==='night'?'夜间':'日间');
+  const p = document.getElementById('envScene');
+  p.textContent = f.scene==='night' ? '夜间' : '日间';
+  p.className = 'pill ' + (f.scene==='night' ? 'warn' : '');
+}
+async function pollEnv(){
+  try{ updateEnv(await fetch(API+'/api/env/status').then(r=>r.json())); }catch(e){}
+}
+
+// ---- 多模态融合判定（来源格子按实际参与的信号动态渲染）----
+const SRC_CN = {radar:'雷达姿态', bracelet:'手环生理', environment:'环境上下文',
+                sensor:'安全传感器', audio:'声学感知'};
+const EVENT_CN = {fall:'跌倒事件', bathroom_hazard:'卫生间久滞', none:'无事件',
+                  home_safety:'居家安全（燃气/烟雾/漏水）', audio_event:'声学事件'};
+function updateFusion(r){
+  if(!r || !r.sources) return;
+  const v = document.getElementById('fusionVerdict');
+  v.textContent = r.decision + ' · 融合置信度 ' + r.fused_confidence;
+  v.className = 'fusion-verdict ' + (r.decision.indexOf('确认')===0 ? 'confirm'
+    : r.decision.indexOf('降级')===0 ? 'downgrade' : 'suppress');
+  document.getElementById('fusionEvent').textContent = EVENT_CN[r.event] || r.event;
+  document.getElementById('fusionGrid').innerHTML = Object.keys(r.sources).map(k=>{
+    const n = Math.round((r.sources[k]||0)*100);
+    const color = n>=75 ? 'var(--danger)' : n>=60 ? 'var(--warn)' : 'var(--ok)';
+    return `<div class="src-cell"><div class="sk">${SRC_CN[k]||k}</div>
+      <div class="sv">${n}%</div>
+      <div class="sbar"><i style="width:${n}%;background:${color}"></i></div></div>`;
+  }).join('');
+  document.getElementById('fusionDetail').textContent = r.detail || '';
+}
+
+// ---- 演示按钮 ----
+document.getElementById('btnDemoFall').onclick = async ()=>{
+  const done = await indoorDemo('/api/demo/fall?hold_sec=45',
+    '已同步触发：雷达跌倒信号 + 手环应激 + 姿态序列，请观察融合判定','danger');
+  // 姿态与融合结果由 socket 推送刷新，这里只需补一次雷达
+  if(done){ pollRadar(); }
+};
+document.getElementById('btnDemoSuppress').onclick = async ()=>{
+  // 误报抑制本就设定「雷达无异常 + 手环平稳」，与老人是否在家不冲突，不加守卫
+  await fetch(API+'/api/demo/suppress?hold_sec=45',{method:'POST'});
+  toast('已触发误报场景：雷达无异常 + 手环平稳，融合应抑制告警','info');
+};
+document.getElementById('btnDemoBed').onclick = async ()=>{
+  const done = await indoorDemo('/api/demo/out_of_bed', '', 'info');
+  if(!done) return;
+  toast('已复位冷却并置「在床」，7s 后转为「离床」','info');
+  setTimeout(()=>toast('雷达：老人已离床，超过阈值将触发二级（关注）离床未归','warn'),8200);
+};
+
+// ---- 跌倒无响应升级倒计时 ----
+let escMap = {};
+async function pollEscalation(){
+  try{
+    const r = await fetch(API+'/api/escalation/status').then(r=>r.json());
+    escMap = {};
+    (r.data||[]).forEach(e=>{ escMap[e.alert_id] = e; });
+    renderAlerts();
+  }catch(e){}
+}
+setInterval(()=>{ if(Object.keys(escMap).length) pollEscalation(); }, 1000);
+setInterval(pollEscalation, 8000);
+
+// ---- AI 健康周报 ----
+document.getElementById('btnWeekly').onclick = async ()=>{
+  const btn = document.getElementById('btnWeekly');
+  btn.disabled = true; btn.textContent = '生成中…';
+  try{
+    const r = await fetch(API+'/api/report/weekly/E001').then(r=>r.json());
+    renderWeekly(r);
+  }catch(e){ toast('周报生成失败','danger'); }
+  btn.disabled = false; btn.textContent = '生成本周 AI 周报';
+};
+function renderWeekly(r){
+  const box = document.getElementById('weeklyBox');
+  box.style.display = 'block';
+  const s = r.stats||{};
+  const cell = (k,v)=>`<div class="rg"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  box.innerHTML = `
+    <div class="report-summary">${r.summary||''}</div>
+    <div class="report-grid">
+      ${cell('平均心率', s.heart_rate?s.heart_rate.avg+' bpm':'--')}
+      ${cell('血氧最低', s.spo2?s.spo2.min+'%':'--')}
+      ${cell('平均血压', s.systolic?`${s.systolic.avg}/${s.diastolic?s.diastolic.avg:'--'}`:'--')}
+      ${cell('最高体温', s.temperature?s.temperature.max+'°C':'--')}
+      ${cell('累计活动', s.steps!=null?s.steps+' 步':'--')}
+      ${cell('预警次数', r.alerts_total!=null?r.alerts_total+' 次':'--')}
+    </div>
+    <b style="font-size:13px">AI 洞察与建议</b>
+    <ul class="report-insights">${(r.insights||[]).map(i=>`<li>${i}</li>`).join('')}</ul>`;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ---- 初始化 ----
+async function init(){
+  // 拉取历史健康数据
+  const r = await fetch(API+'/api/health/E001?limit=20').then(r=>r.json());
+  if(r.data && r.data.length){
+    r.data.reverse().forEach(updateMetrics);
+  }
+  await loadReminders();
+  // 拉取已有预警
+  const ar = await fetch(API+'/api/alert/?limit=20').then(r=>r.json());
+  alerts = (ar.data||[]);
+  renderAlerts();
+  // 拉取风险指数 + 房间状态 + 升级状态 + 融合/雷达/环境
+  try{ updateRisk(await fetch(API+'/api/risk/E001').then(r=>r.json())); }catch(e){}
+  try{ updateFusion(await fetch(API+'/api/fusion/status').then(r=>r.json())); }catch(e){}
+  pollRoom(); pollEscalation(); pollRadar(); pollEnv();
+  pollSafety(); pollDoor(); pollAudio();
+  loadAwayRules();
+  // 离线模式下数据是静态快照，高频轮询不会有新数据，反而浪费性能；
+  // 仅保留必要的周期刷新（用户点击演示按钮后仍会主动刷新）。
+  if(!OFFLINE.active){
+    setInterval(pollRoom, 5000);
+    setInterval(pollRadar, 4000);
+    setInterval(pollEnv, 5000);
+    setInterval(pollSafety, 4000);
+    setInterval(pollDoor, 4000);
+    setInterval(pollAudio, 4000);
+  }
+  updateScore(); renderTimeline();
+  if(!OFFLINE.active){
+    // 启动模拟器（离线模式无此概念，界面已按静态数据呈现）
+    await fetch(API+'/api/simulator/start',{method:'POST'});
+    toast('系统已就绪，模拟器运行中','info');
+  }else{
+    toast('静态演示模式：界面与数据完整，交互为本地模拟','info');
+  }
+}
+
+// ---- WebSocket ----
+let socket = null;
+function connectSocket(){
+  if(typeof io==='undefined'){
+    document.getElementById('wsDot').classList.add('off');
+    document.getElementById('wsStatus').textContent = '未启用 SocketIO';
+    return;
+  }
+  socket = io(API);
+  socket.on('connect',()=>{
+    document.getElementById('wsDot').classList.remove('off');
+    document.getElementById('wsStatus').textContent = '实时连接';
+  });
+  socket.on('disconnect',()=>{
+    document.getElementById('wsDot').classList.add('off');
+    document.getElementById('wsStatus').textContent = '已断开';
+  });
+  socket.on('health_update', updateMetrics);
+  socket.on('alert', d=>addAlert(d));
+  socket.on('sos', d=>addAlert({level:'SOS',message:d.message,ts:d.timestamp,status:'open'}));
+  socket.on('reminder', d=>{
+    toast('提醒：'+d.message,'warn');
+    loadReminders();
+  });
+  socket.on('posture_update', d=>{
+    document.getElementById('sceneTag').textContent = '姿态：'+d.posture+(d.fall?'（跌倒！）':'');
+  });
+  socket.on('risk_update', updateRisk);
+  socket.on('radar_update', updateRadar);
+  socket.on('env_update', updateEnv);
+  socket.on('fusion_update', updateFusion);
+  socket.on('safety_update', updateSafety);
+  socket.on('door_update', updateDoor);
+  socket.on('audio_update', updateAudio);
+  socket.on('escalation_update', d=>{
+    if(d.type==='escalated'){
+      delete escMap[d.alert_id];
+      addAlert({level:'L1', category:'fall_no_response', message:d.message,
+                ts: Date.now()/1000, status:'open', id:'esc-'+d.alert_id});
+    } else {
+      pollEscalation();
+      if(d.type==='cancelled') toast('老人跌倒已有人响应，升级处置已取消','info');
+    }
+    renderAlerts();
+  });
+}
+
+// 轮询兜底（无 SocketIO 时）
+function startPolling(){
+  setInterval(async ()=>{
+    try{
+      const r = await fetch(API+'/api/health/latest/E001').then(r=>r.json());
+      if(r && r.heart_rate) updateMetrics(r);
+      const ar = await fetch(API+'/api/alert/?limit=20').then(r=>r.json());
+      const newList = ar.data||[];
+      if(newList.length && newList[0].id !== (alerts[0]?.id)){
+        const newOnes = newList.filter(n=>!alerts.some(a=>a.id===n.id));
+        newOnes.forEach(addAlert);
+      }
+      updateRisk(await fetch(API+'/api/risk/E001').then(r=>r.json()));
+      updateRadar(await fetch(API+'/api/mmwave/status').then(r=>r.json()));
+      updateEnv(await fetch(API+'/api/env/status').then(r=>r.json()));
+      updateSafety(await fetch(API+'/api/safety/status').then(r=>r.json()));
+      updateDoor(await fetch(API+'/api/door/status').then(r=>r.json()));
+      updateAudio(await fetch(API+'/api/audio/status').then(r=>r.json()));
+    }catch(e){}
+  }, 3000);
+}
+
+// 等数据层就绪（探测后端 / 加载快照）后再启动，避免首屏请求打到不存在的后端
+window.addEventListener('datalayer-ready', ()=>{
+  init().finally(()=>{
+    // 离线模式没有 SocketIO 后端，跳过连接以免控制台报错、状态灯误报
+    if(!OFFLINE.active) connectSocket();
+    else {
+      const dot = document.getElementById('wsDot');
+      const txt = document.getElementById('wsStatus');
+      if(dot) dot.classList.add('off');
+      if(txt) txt.textContent = '静态演示模式';
+    }
+    startPolling();
+  });
+});
+
+/* ===================== v1.3.1 界面层：导航 · 主题 · 分页 ===================== */
+(function(){
+  // ---- 主题：读取偏好，默认深色 ----
+  var savedTheme = null;
+  try{ savedTheme = localStorage.getItem('wb-theme'); }catch(e){}
+  document.documentElement.setAttribute('data-theme', savedTheme || 'dark');
+
+  var themeBtn = document.getElementById('themeBtn');
+  if(themeBtn){
+    themeBtn.onclick = function(){
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try{ localStorage.setItem('wb-theme', next); }catch(e){}
+      // 让 Chart.js 重新适配主题色
+      if(typeof chart !== 'undefined' && chart){
+        var gridColor = next==='dark' ? 'rgba(255,255,255,.055)' : 'rgba(15,23,42,.05)';
+        var tickColor = next==='dark' ? '#5d6f8f' : '#93a2b8';
+        chart.options.scales.y.grid.color = gridColor;
+        chart.options.scales.y.ticks.color = tickColor;
+        chart.options.scales.y.title.color = tickColor;
+        chart.options.scales.y1.ticks.color = tickColor;
+        chart.options.scales.y1.title.color = tickColor;
+        chart.options.plugins.legend.labels.color = tickColor;
+        chart.update('none');
+      }
+    };
+  }
+
+  // ---- 分页导航 ----
+  var navItems = document.querySelectorAll('.nitem');
+  var pages = document.querySelectorAll('.page');
+  function goto(page){
+    pages.forEach(function(p){ p.classList.toggle('on', p.id === 'page-' + page); });
+    navItems.forEach(function(n){ n.classList.toggle('on', n.dataset.page === page); });
+    window.scrollTo({top:0, behavior:'smooth'});
+    // 图表在隐藏时无法正确计算尺寸，切回时重绘
+    if(page === 'vitals' && typeof chart !== 'undefined' && chart){
+      setTimeout(function(){ chart.resize(); }, 60);
+    }
+  }
+  navItems.forEach(function(n){
+    n.onclick = function(){ goto(n.dataset.page); };
+  });
+
+  // ---- 关键指标双写：概览页与体征页共享同一数据 ----
+  var MIRROR = [
+    ['v-hr','v-hr2'], ['v-spo2','v-spo2-2'], ['v-bp','v-bp2'], ['v-temp','v-temp2'],
+    ['t-hr','t-hr2'], ['t-spo2','t-spo2-2'], ['t-bp','t-bp2'], ['t-temp','t-temp2'],
+    ['lastUpdate','lastUpdate2'],
+    ['safetyGas','safetyGas2'], ['safetySmoke','safetySmoke2'], ['safetyWater','safetyWater2'],
+    ['safetyRoom','safetyRoom2'], ['safetyPill','safetyPill2'],
+    ['barGas','barGas2'], ['barSmoke','barSmoke2'], ['barWater','barWater2'],
+    ['audioDb','audioDb2'], ['audioEvent','audioEvent2'], ['doorPill','doorPill2'],
+    ['doorState','doorState2'], ['windowState','windowState2'],
+    ['homeState','homeState2'], ['awaySec','awaySec2']
+  ];
+  var ALERT_IDS = {};
+  MIRROR.forEach(function(pair){ ALERT_IDS[pair[0]] = true; });
+
+  window.__mirror = function(srcId){
+    if(!ALERT_IDS[srcId]) return;
+    var src = document.getElementById(srcId);
+    if(!src) return;
+    var pair = MIRROR.filter(function(p){ return p[0] === srcId; })[0];
+    if(!pair || !pair[1]) return;
+    var dst = document.getElementById(pair[1]);
+    if(!dst) return;
+    dst.textContent = src.textContent;
+    dst.className = src.className;
+    if(src.style && src.style.color) dst.style.color = src.style.color;
+    if(src.style && src.style.width) dst.style.width = src.style.width;
+    if(src.style && src.style.background) dst.style.background = src.style.background;
+  };
+  window.__mirrorAll = function(){
+    MIRROR.forEach(function(p){ window.__mirror(p[0]); });
+  };
+
+  // ---- 三维细分弧（安心的构成分解）----
+  var CIRC = 113; // 2πr, r=18
+  function setArc(arcId, txtId, ratio, level){
+    var arc = document.getElementById(arcId);
+    var txt = document.getElementById(txtId);
+    if(!arc) return;
+    var r = Math.max(0, Math.min(1, ratio));
+    var color = level === 2 ? 'var(--danger)' : level === 1 ? 'var(--warn)' : 'var(--ok)';
+    arc.setAttribute('stroke', color);
+    arc.setAttribute('stroke-dashoffset', String((CIRC * (1 - r)).toFixed(1)));
+    if(txt){ txt.textContent = Math.round(r * 100); txt.style.color = color; }
+  }
+  window.__updateArcs = function(){
+    // 体征：从 STATE 里算异常项占比
+    var r = window.STATE ? window.STATE.latest : null;
+    var vitalOk = 1, vLv = 0;
+    if(r){
+      var bad = 0, warn = 0;
+      if(r.spo2 != null){ if(r.spo2 < 88) bad++; else if(r.spo2 < 94) warn++; }
+      if(r.heart_rate != null && (r.heart_rate > 110 || r.heart_rate < 45)) bad++;
+      if(r.temperature != null && (r.temperature >= 37.5 || r.temperature <= 35.5)) warn++;
+      if(r.systolic != null && (r.systolic >= 160 || r.diastolic >= 100)) warn++;
+      vitalOk = Math.max(0, 1 - bad * 0.34 - warn * 0.15);
+      vLv = bad ? 2 : (warn ? 1 : 0);
+    }
+    setArc('arcVital', 'arcVitalTxt', vitalOk, vLv);
+
+    // 安全：以三传感器越限为准
+    var s = window.STATE ? window.STATE.safety : null;
+    var safeOk = 1, sLv = 0;
+    if(s && window.SAFETY_LIMIT){
+      var L = window.SAFETY_LIMIT;
+      var g = s.gas_ppm >= L.gas ? 2 : (s.gas_ppm >= L.gas_warn ? 1 : 0);
+      var sm = s.smoke >= L.smoke ? 2 : (s.smoke >= L.smoke_warn ? 1 : 0);
+      var w = s.water >= L.water ? 2 : (s.water >= L.water_warn ? 1 : 0);
+      sLv = Math.max(g, sm, w);
+      safeOk = sLv === 2 ? 0.15 : (sLv === 1 ? 0.6 : 1);
+    }
+    setArc('arcSafety', 'arcSafetyTxt', safeOk, sLv);
+
+    // 活动：在家且有人在场为佳，离家越久越低。
+    // 阈值不写死——直接读后端判定的阶段（away_stage），与走失分级保持一致，
+    // 否则会出现"外出 4 分钟活动分归零、但告警规则认为 3 小时内都正常"的自相矛盾。
+    var d = window.STATE ? window.STATE.door : null;
+    var actOk = 1, aLv = 0;
+    if(d){
+      if(!d.at_home){
+        var away = d.away_sec || 0;
+        switch(d.away_stage){
+          case 'lost': actOk = 0.15; aLv = 2; break;
+          case 'away': actOk = 0.55; aLv = 1; break;
+          case 'soft': actOk = 0.8;  aLv = 0; break;
+          default:
+            // 尚未取得阶段（如首帧）时按宽限期线性衰减，兜底用当前生效阈值
+            var g = (window.__awayRules && window.__awayRules.grace_sec) || 600;
+            actOk = Math.max(0.85, 1 - away / Math.max(g, 60));
+            aLv = 0;
+        }
+      } else {
+        actOk = 1; aLv = 0;
+      }
+    }
+    setArc('arcActive', 'arcActiveTxt', actOk, aLv);
+  };
+
+  // ---- 侧边预警计数 ----
+  // 角标挂在「居家安全」菜单下，因此只统计**安全类**未处置告警（燃气/烟雾/水浸/呼救/
+  // 玻璃碎裂/闷响/开窗/外出未归）。体征类告警属于「体征与风险」页，不计入此角标，
+  // 否则点进居家安全会发现条目数对不上。
+  var SAFETY_CATEGORIES = {
+    gas_leak: 1, smoke_alarm: 1, water_leak: 1, voice_help: 1,
+    glass_break: 1, thud_sound: 1, window_open: 1,
+    away_from_home: 1, away_critical: 1, away_long: 1, bathroom_dwell: 1
+  };
+  window.__updateNavBadge = function(count){
+    var el = document.getElementById('navSafetyCnt');
+    if(el){
+      if(count > 0){
+        el.textContent = count > 99 ? '99+' : count;
+        el.style.display = '';
+        el.title = '居家安全：' + count + ' 条待处置';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+    // 同步页面内的提示条（解释侧栏角标含义）
+    var card = document.getElementById('safetyTodoCard');
+    var num = document.getElementById('safetyTodoNum');
+    if(card && num){
+      if(count > 0){ num.textContent = count; card.style.display = ''; }
+      else { card.style.display = 'none'; }
+    }
+  };
+  window.__calcSafetyBadge = function(){
+    if(typeof alerts === 'undefined') return 0;
+    return alerts.filter(function(a){
+      return a.status !== 'ack' && SAFETY_CATEGORIES[a.category];
+    }).length;
+  };
+
+  // 把镜像与弧更新挂到渲染循环
+  var _origRenderAlerts = window.renderAlerts;
+  var origSetInterval = window.setInterval;
+  window.setInterval = function(fn, ms){
+    return origSetInterval(function(){
+      try{ fn(); }catch(e){}
+      try{ window.__mirrorAll(); window.__updateArcs(); }catch(e){}
+    }, ms);
+  };
+})();
+
+/* ===================== 界面层：镜像与弧刷新包装 ===================== */
+(function(){
+  var orig = {
+    updateMetrics: window.updateMetrics, updateSafety: window.updateSafety,
+    updateDoor: window.updateDoor, updateAudio: window.updateAudio,
+    updateScore: window.updateScore, renderAlerts: window.renderAlerts
+  };
+  function wrap(name){
+    var f = orig[name]; if(!f) return;
+    window[name] = function(){
+      var r = f.apply(this, arguments);
+      try{
+        if(name==='updateMetrics'){
+          ['v-hr','v-spo2','v-bp','v-temp','t-hr','t-spo2','t-bp','t-temp','lastUpdate'].forEach(window.__mirror);
+        }
+        if(name==='updateSafety'){
+          ['safetyGas','safetySmoke','safetyWater','safetyRoom','safetyPill','barGas','barSmoke','barWater'].forEach(window.__mirror);
+        }
+        if(name==='updateDoor'){
+          ['doorState','windowState','homeState','awaySec','doorPill'].forEach(window.__mirror);
+        }
+        if(name==='updateAudio'){
+          ['audioDb','audioEvent'].forEach(window.__mirror);
+        }
+        window.__updateArcs();
+        if(name==='renderAlerts' && typeof alerts!=='undefined'){
+          window.__updateNavBadge(window.__calcSafetyBadge());
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+  ['updateMetrics','updateSafety','updateDoor','updateAudio','updateScore','renderAlerts'].forEach(wrap);
+})();
+
+/* ===================== 登录 / 注册 + 双端切换 ===================== */
+(function(){
+  'use strict';
+  var SESS_KEY   = 'wb-session';      // 登录态（含 token 与账号信息）
+  var LOCAL_DB   = 'wb-local-users';  // 离线模式的本地账号库
+  // 演示账号：离线静态模式下也内置可用（在线时由后端正规校验）
+  var DEMO_USER  = 'demo';
+  var DEMO_PASS  = '123456';
+
+  var loginEl  = document.getElementById('login');
+  var form     = document.getElementById('loginForm');
+  var errEl    = document.getElementById('loginErr');
+  var regForm  = document.getElementById('registerForm');
+  var regErr   = document.getElementById('regErr');
+  var regOk    = document.getElementById('regOk');
+  var bandEl   = document.getElementById('band');
+  var closeBtn = document.getElementById('bandClose');
+  var switchBtn= document.getElementById('btnBand');
+
+  // 当前会话（登录后填）——供手环端按角色调整展示
+  var SESSION = null;
+  window.__session = function(){ return SESSION; };
+
+  function readSession(){
+    try{ return JSON.parse(sessionStorage.getItem(SESS_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+  function writeSession(s){
+    SESSION = s;
+    try{
+      if(s) sessionStorage.setItem(SESS_KEY, JSON.stringify(s));
+      else  sessionStorage.removeItem(SESS_KEY);
+    }catch(e){}
+  }
+
+  // ---------- 提示 ----------
+  function showError(el, msg){
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function hideTip(el){ el.classList.remove('show'); }
+
+  function switchTab(which){
+    var isLogin = which === 'login';
+    document.getElementById('tabLogin').classList.toggle('on', isLogin);
+    document.getElementById('tabRegister').classList.toggle('on', !isLogin);
+    form.classList.toggle('on', isLogin);
+    regForm.classList.toggle('on', !isLogin);
+    hideTip(errEl); hideTip(regErr); hideTip(regOk);
+  }
+  document.getElementById('tabLogin').onclick = function(){ switchTab('login'); };
+  document.getElementById('tabRegister').onclick = function(){ switchTab('register'); };
+  document.getElementById('tipToReg').onclick = function(){ switchTab('register'); };
+
+  // 角色选择
+  var ROLE = 'family';
+  var roleBtns = document.querySelectorAll('#rolePick .role-opt');
+  Array.prototype.forEach.call(roleBtns, function(b){
+    b.onclick = function(){
+      ROLE = b.getAttribute('data-role');
+      Array.prototype.forEach.call(roleBtns, function(x){
+        x.classList.toggle('on', x === b);
+      });
+    };
+  });
+
+  function enterApp(user, token){
+    writeSession({ user: user || { username: DEMO_USER }, token: token || '' });
+    loginEl.classList.add('hide');
+    // 老人身份登录 → 直接进手环端（那是老人自己的界面）
+    if(user && user.role === 'elder' && typeof window.__openBand === 'function'){
+      window.__openBand();
+    }
+  }
+
+  // 同一会话内已登录则跳过（刷新不重复登录）
+  var saved = readSession();
+  if(saved){ SESSION = saved; loginEl.classList.add('hide'); }
+
+  // ---------- 离线模式的本地账号库 ----------
+  // 静态托管（GitHub Pages）没有后端，注册请求必然失败。
+  // 此时退化为浏览器本地账号：用同样的 PBKDF2 加盐哈希后存入 localStorage，
+  // 让「注册 → 用新账号登录」这条链路在纯静态站上依然走得通。
+  // 注意：这只是演示级——本地存储可被用户自行读取，不具备真实安全性。
+  function loadLocalUsers(){
+    try{ return JSON.parse(localStorage.getItem(LOCAL_DB) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function saveLocalUsers(db){
+    try{ localStorage.setItem(LOCAL_DB, JSON.stringify(db)); }catch(e){}
+  }
+  function buf2hex(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){
+      return ('00' + b.toString(16)).slice(-2);
+    }).join('');
+  }
+  /** 纯 JS 的 PBKDF2-HMAC-SHA256 兜底实现。
+   *
+   * 为什么需要它：`crypto.subtle` **只在安全上下文可用**——
+   * https、localhost、file:// 有；用 `http://192.168.x.x` 这类地址打开时，
+   * 浏览器会把 crypto.subtle 置为 undefined。若不兜底，用户在那样的
+   * 环境下注册会直接抛异常。这里用同步的 HMAC-SHA256 迭代实现等价逻辑，
+   * 保证任何环境都能注册。
+   */
+  function sha256Hex(bytes){
+    // 轻量 SHA-256（仅用于本地演示账号，非加密库替代品）
+    var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+             0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+             0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+             0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+             0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+             0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+             0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+             0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    var bytes = Array.prototype.slice.call(bytes);
+    var bitLen = bytes.length * 8;
+    bytes.push(0x80);
+    while(bytes.length % 64 !== 56) bytes.push(0);
+    var hi = Math.floor(bitLen / 0x100000000), lo = bitLen >>> 0;
+    bytes.push((hi>>>24)&255,(hi>>>16)&255,(hi>>>8)&255,hi&255);
+    bytes.push((lo>>>24)&255,(lo>>>16)&255,(lo>>>8)&255,lo&255);
+
+    function rr(x,n){ return (x>>>n)|(x<<(32-n)); }
+    for(var off=0; off<bytes.length; off+=64){
+      var w = new Array(64);
+      for(var i=0;i<16;i++){
+        w[i] = (bytes[off+i*4]<<24)|(bytes[off+i*4+1]<<16)|
+               (bytes[off+i*4+2]<<8)|bytes[off+i*4+3];
+      }
+      for(var i=16;i<64;i++){
+        var s0 = rr(w[i-15],7)^rr(w[i-15],18)^(w[i-15]>>>3);
+        var s1 = rr(w[i-2],17)^rr(w[i-2],19)^(w[i-2]>>>10);
+        w[i] = (w[i-16]+s0+w[i-7]+s1)>>>0;
+      }
+      var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+      for(var i=0;i<64;i++){
+        var S1 = rr(e,6)^rr(e,11)^rr(e,25);
+        var ch = (e&f)^((~e)&g);
+        var t1 = (h+S1+ch+K[i]+w[i])>>>0;
+        var S0 = rr(a,2)^rr(a,13)^rr(a,22);
+        var mj = (a&b)^(a&c)^(b&c);
+        var t2 = (S0+mj)>>>0;
+        h=g; g=f; f=e; e=(d+t1)>>>0;
+        d=c; c=b; b=a; a=(t1+t2)>>>0;
+      }
+      H[0]=(H[0]+a)>>>0; H[1]=(H[1]+b)>>>0; H[2]=(H[2]+c)>>>0; H[3]=(H[3]+d)>>>0;
+      H[4]=(H[4]+e)>>>0; H[5]=(H[5]+f)>>>0; H[6]=(H[6]+g)>>>0; H[7]=(H[7]+h)>>>0;
+    }
+    return H.map(function(x){ return ('00000000'+x.toString(16)).slice(-8); }).join('');
+  }
+
+  /** HMAC-SHA256。keyBytes / msgBytes 均为**字节数组**，返回 hex 字符串。
+   *
+   * 注意：key 必须是原始字节，不能传 hex 字符串——
+   * PBKDF2 的 HMAC 以盐的原始字节为 key，传 hex 会算出完全不同的结果。
+   */
+  function hmacSha256Hex(keyBytes, msgBytes){
+    var blockSize = 64;
+    var key = keyBytes.slice();
+    if(key.length > blockSize) key = hexToBytes(sha256Hex(key));
+    while(key.length < blockSize) key.push(0);
+    var ipad = key.map(function(b){ return b ^ 0x36; });
+    var opad = key.map(function(b){ return b ^ 0x5c; });
+    var inner = sha256Hex(ipad.concat(msgBytes));
+    return sha256Hex(opad.concat(hexToBytes(inner)));
+  }
+
+  function hexToBytes(hex){
+    var out = [];
+    for(var i=0;i<hex.length;i+=2) out.push(parseInt(hex.substr(i,2),16));
+    return out;
+  }
+
+  function strToBytes(s){
+    var out = [];
+    for(var i=0;i<s.length;i++){
+      var c = s.charCodeAt(i);
+      if(c < 0x80) out.push(c);
+      else if(c < 0x800){ out.push(0xc0|(c>>6), 0x80|(c&63)); }
+      else { out.push(0xe0|(c>>12), 0x80|((c>>6)&63), 0x80|(c&63)); }
+    }
+    return out;
+  }
+
+  /** PBKDF2-HMAC-SHA256（纯 JS，迭代次数固定 1000）。
+   *
+   * 为什么不用浏览器的 `crypto.subtle`：
+   *   1. `crypto.subtle` **只在安全上下文可用**（https / localhost / file://）。
+   *      用 `http://192.168.x.x` 打开时它是 undefined，注册会直接抛异常。
+   *   2. 更关键——若原生走 100000 次迭代、兜底走 1000 次，
+   *      同一个密码在不同环境下会算出**不同的哈希**，用户换个网络就登不上。
+   * 因此这里统一走纯 JS，保证任何环境结果完全一致。
+   *
+   * 正确性已用 Node 原生 crypto.pbkdf2Sync 交叉验证（见 tools/test_pbkdf2.js）。
+   *
+   * 安全性说明：本地账号仅用于静态演示（数据本就在用户自己的 localStorage 里），
+   * 1000 次迭代足以防止明文泄露；真正的密码校验由后端 PBKDF2-120000 次负责。
+   */
+  function pbkdf2(password, saltHex, iterations){
+    var iters = iterations || 1000;
+    var salt = hexToBytes(saltHex);
+    var pwBytes = strToBytes(password);
+    // PBKDF2 第 1 块（hLen=32 只需 1 块）：
+    //   U1 = PRF(密码, 盐 || INT(1))
+    // PRF 即 HMAC-SHA256 —— 注意 **密码是 key，盐||INT(i) 是消息**，
+    // 反过来会算出一个看似合理但完全错误的值（且登录时同样算错，
+    // 表现为「注册后无法登录」，极难排查）。
+    var u = hexToBytes(hmacSha256Hex(pwBytes, salt.concat([0,0,0,1])));
+    var result = u.slice();
+    // U2..Uc = PRF(密码, U_{c-1})，逐块异或
+    for(var i=1;i<iters;i++){
+      u = hexToBytes(hmacSha256Hex(pwBytes, u));
+      for(var j=0;j<32;j++) result[j] ^= u[j];
+    }
+    return result.map(function(b){ return ('00'+b.toString(16)).slice(-2); }).join('');
+  }
+
+  function randHex(n){
+    var a = new Uint8Array(n);
+    if(window.crypto && window.crypto.getRandomValues){
+      window.crypto.getRandomValues(a);
+    }else{
+      for(var i=0;i<n;i++) a[i] = Math.random()*256|0;
+    }
+    return buf2hex(a);
+  }
+  async function localRegister(username, password, role, displayName){
+    var db = loadLocalUsers();
+    if(db[username]) throw new Error('该用户名已被注册');
+    var salt = randHex(16);
+    db[username] = {
+      username: username, salt: salt,
+      hash: pbkdf2(password, salt),
+      role: role || 'family', display_name: displayName || username,
+      created_at: Date.now() / 1000
+    };
+    saveLocalUsers(db);
+    return { username: username, role: db[username].role,
+             display_name: db[username].display_name };
+  }
+  async function localLogin(username, password){
+    var db = loadLocalUsers();
+    // 内置演示账号在离线模式下也可用
+    if(username === DEMO_USER && password === DEMO_PASS){
+      return { username: DEMO_USER, role:'family', display_name:'李萍（女儿）' };
+    }
+    var u = db[username];
+    if(!u) return null;
+    var h = pbkdf2(password, u.salt);
+    if(h !== u.hash) return null;
+    return { username: u.username, role: u.role, display_name: u.display_name };
+  }
+
+  // ---------- 登录提交 ----------
+  form.addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    hideTip(errEl);
+    var u = (document.getElementById('loginUser').value || '').trim();
+    var p = document.getElementById('loginPass').value || '';
+    if(!u || !p){ showError(errEl, '请输入账号和密码'); return; }
+
+    var btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = '登录中…';
+    try{
+      var res = null, offline = false;
+      try{
+        var r = await fetch(API + '/api/auth/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: u, password: p })
+        });
+        res = await r.json();
+        if(!r.ok) res = res || { ok:false, error:'登录失败' };
+      }catch(e){ offline = true; }
+
+      if(offline){
+        // 静态托管：走后端失败 → 用本地账号库校验
+        var lu = await localLogin(u, p);
+        if(lu){ enterApp(lu, ''); toast('欢迎回来，' + u + '（本地演示账号）','info'); }
+        else  { showError(errEl, '用户名或密码不正确'); document.getElementById('loginPass').value = ''; }
+      }else if(res && res.ok){
+        enterApp(res.user, res.token);
+        toast('欢迎回来，' + (res.user.display_name || u), 'info');
+      }else{
+        showError(errEl, (res && res.error) || '登录失败，请重试');
+        // 清空密码框：避免用户反复提交同一个错误密码
+        document.getElementById('loginPass').value = '';
+      }
+    }catch(e){
+      showError(errEl, '登录异常：' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = '登 录';
+    }
+  });
+
+  // ---------- 注册提交 ----------
+  regForm.addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    hideTip(regErr); hideTip(regOk);
+    var u  = (document.getElementById('regUser').value || '').trim();
+    var p  = document.getElementById('regPass').value || '';
+    var p2 = document.getElementById('regPass2').value || '';
+
+    // 前端先做一遍即时校验，避免无谓的往返
+    if(!u)      { showError(regErr, '请输入账号'); return; }
+    if(u.length < 2)  { showError(regErr, '账号至少 2 位'); return; }
+    if(u.length > 24) { showError(regErr, '账号不能超过 24 位'); return; }
+    if(/\s/.test(u))  { showError(regErr, '账号不能包含空格'); return; }
+    if(!p)      { showError(regErr, '请输入密码'); return; }
+    if(p.length < 6)  { showError(regErr, '密码至少 6 位'); return; }
+    if(p !== p2){ showError(regErr, '两次输入的密码不一致'); return; }
+
+    var btn = document.getElementById('regBtn');
+    btn.disabled = true; btn.textContent = '注册中…';
+    try{
+      var res = null, offline = false;
+      try{
+        var r = await fetch(API + '/api/auth/register', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: u, password: p, confirm: p2, role: ROLE })
+        });
+        res = await r.json();
+        if(!r.ok) res = res || { ok:false, error:'注册失败' };
+      }catch(e){ offline = true; }
+
+      if(offline){
+        try{
+          await localRegister(u, p, ROLE);
+          regOk.textContent = '注册成功（本地演示账号）！正在为你登录…';
+          regOk.classList.add('show');
+          setTimeout(function(){ enterApp({ username:u, role:ROLE }, ''); }, 700);
+        }catch(e2){
+          showError(regErr, e2.message);
+        }
+      }else if(res && res.ok){
+        regOk.textContent = '注册成功！正在为你登录…';
+        regOk.classList.add('show');
+        setTimeout(function(){ enterApp(res.user, res.token); }, 700);
+      }else{
+        showError(regErr, (res && res.error) || '注册失败，请重试');
+      }
+    }catch(e){
+      showError(regErr, '注册异常：' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = '注 册';
+    }
+  });
+
+  // ---- 手环端 ----
+  function pad(n){ return String(n).padStart(2, '0'); }
+
+  function renderBandClock(){
+    var d = new Date();
+    document.getElementById('bandTime').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var wk = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    document.getElementById('bandDay').textContent = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + wk;
+    document.getElementById('bandDate').textContent = (d.getMonth()+1) + '/' + d.getDate();
+  }
+
+  // ---- 卡片滑动（小米手环的卡片式导航）----
+  // 左右滑动切换卡片，滑到最后一张继续滑**回到第一张**（循环滚动）。
+  // 循环在 CSS 的 scroll-snap 里做不到，需在滚动结束时手动把位置绕回去。
+  var wbCards = document.getElementById('wbCards');
+  var wbDots  = document.getElementById('wbDots');
+  var WB_N = 7;                 // 卡片数
+  var WB_CURRENT = 0;
+  var wbLooping = false;
+
+  function wbBuildDots(){
+    if(!wbDots) return;
+    var h = '';
+    for(var i=0;i<WB_N;i++) h += '<i' + (i===0 ? ' class="on"' : '') + '></i>';
+    wbDots.innerHTML = h;
+  }
+  function wbSetDot(idx){
+    if(!wbDots) return;
+    var kids = wbDots.children;
+    for(var i=0;i<kids.length;i++){
+      kids[i].classList.toggle('on', i === idx);
+    }
+  }
+  function wbGo(idx, smooth){
+    if(!wbCards) return;
+    // 循环：越界时绕回另一端
+    if(idx < 0) idx = WB_N - 1;
+    if(idx >= WB_N) idx = 0;
+    WB_CURRENT = idx;
+    var left = idx * wbCards.clientWidth;
+    // 兼容：部分环境（旧 WebView、jsdom）没有 Element.scrollTo 或 scrollTo 的
+    // options 重载，直接调用会抛异常导致整个手环端打不开。故逐级降级。
+    if(typeof wbCards.scrollTo === 'function'){
+      try{
+        wbCards.scrollTo({ left: left, behavior: smooth === false ? 'auto' : 'smooth' });
+      }catch(e){
+        wbCards.scrollTo(left, 0);
+      }
+    }else{
+      wbCards.scrollLeft = left;
+    }
+    wbSetDot(idx);
+  }
+  if(wbCards){
+    var wbScrollTimer = null;
+    wbCards.addEventListener('scroll', function(){
+      if(wbLooping) return;
+      clearTimeout(wbScrollTimer);
+      wbScrollTimer = setTimeout(function(){
+        var w = wbCards.clientWidth || 1;
+        var idx = Math.round(wbCards.scrollLeft / w);
+        // 越界 → 平滑绕回另一端，形成循环
+        if(idx < 0){ wbLooping = true; wbGo(WB_N - 1); setTimeout(function(){ wbLooping = false; }, 400); return; }
+        if(idx >= WB_N){ wbLooping = true; wbGo(0); setTimeout(function(){ wbLooping = false; }, 400); return; }
+        WB_CURRENT = idx;
+        wbSetDot(idx);
+      }, 90);
+    }, {passive:true});
+  }
+
+  // 从主界面已经拿到的数据里取值（与大屏同源，不额外请求）
+  function renderBandData(){
+    var vi = document.getElementById('v-hr');
+    var vs = document.getElementById('v-spo2');
+    var hr = vi ? vi.textContent.trim() : '--';
+    var spo2 = vs ? vs.textContent.trim() : '--';
+
+    var hrEl = document.getElementById('bandHr');
+    var spEl = document.getElementById('bandSpo2');
+    hrEl.textContent = hr;
+    spEl.textContent = spo2;
+
+    // 体征异常提示（阈值与后端口径一致：心率 60–100，血氧 ≥95）
+    // 手环上「颜色即结论」：异常时整张卡片转红并给出人话提示，
+    // 而不是只把数字变个色——老人看的是颜色和短句。
+    var hrn = parseFloat(hr), spn = parseFloat(spo2);
+    var hrCard = document.getElementById('bandHrCard');
+    var hrTag = document.getElementById('bandHrTag');
+    var hrNm = document.getElementById('bandHrNm');
+    var hrBad = isFinite(hrn) && (hrn > 100 || hrn < 60);
+    if(hrBad){
+      hrCard.classList.add('warn');
+      hrCard.classList.remove('ok');
+      hrTag.textContent = hrn > 100 ? '偏快，建议静坐休息' : '偏慢，请留意';
+      if(hrNm) hrNm.textContent = '静息心率 · 异常';
+    }else{
+      hrCard.classList.remove('warn');
+      hrCard.classList.add('ok');
+      hrTag.textContent = '处于正常范围';
+      if(hrNm) hrNm.textContent = '静息心率';
+    }
+
+    var spCard = document.getElementById('bandSpo2Card');
+    var spBad = isFinite(spn) && spn < 95;
+    if(spBad){
+      spCard.classList.add('warn');
+      spCard.classList.remove('ok');
+      document.getElementById('bandSpo2Tag').textContent = '偏低，请留意';
+    }else{
+      spCard.classList.remove('warn');
+      spCard.classList.add('ok');
+      document.getElementById('bandSpo2Tag').textContent = '处于正常范围';
+    }
+
+    // 位置与安全
+    var room = document.getElementById('roomName');
+    var dwell = document.getElementById('roomDwell');
+    var roomTxt = room ? room.textContent.trim() : '--';
+    var bandRoom = document.getElementById('bandRoom');
+    bandRoom.textContent = roomTxt || '--';
+    var isAway = roomTxt === '外出';
+    bandRoom.classList.toggle('away', isAway);
+    document.getElementById('bandRoomSub').textContent =
+      isAway ? '已离家，正在计时' : (dwell ? dwell.textContent.trim() : '--');
+    var pill = document.getElementById('bandSafePill');
+    if(pill){
+      pill.textContent = isAway ? '外出中 · 家属已知晓' : '环境安全';
+      pill.classList.toggle('warn', isAway);
+    }
+
+    // 活动环：用步数折算（目标 6000 步），让表盘有个进度感。
+    // 数据源是 STATE.latest（后端 /api/health/latest 的最近一条记录），
+    // 不是 STATE.health —— STATE 里没有 health 这个键。
+    var steps = 0;
+    if(typeof STATE !== 'undefined' && STATE.latest && STATE.latest.steps != null){
+      steps = STATE.latest.steps;
+    }
+    var pct = Math.max(0, Math.min(1, steps / 6000));
+    var ring = document.getElementById('bandRing');
+    if(ring){
+      var C = 2 * Math.PI * 24;          // 周长
+      ring.setAttribute('stroke-dasharray', C.toFixed(1));
+      ring.setAttribute('stroke-dashoffset', (C * (1 - pct)).toFixed(1));
+    }
+    var pcEl = document.getElementById('bandRingPc');
+    if(pcEl) pcEl.textContent = steps ? steps : '--';
+
+    // 家人留言（纯展示）
+    var msgs = [
+      {who:'女儿 李萍', tx:'妈，今天降温了，出门记得加件外套。'},
+      {who:'社区网格员', tx:'下午 3 点上门做例行探访，家里有人吗？'},
+      {who:'儿子 李强', tx:'药按时吃了吗？血压记得量一下。'}
+    ];
+    document.getElementById('bandMsgs').innerHTML = msgs.map(function(m){
+      return '<div class="wb-msg"><div class="av">' + m.who.slice(0,1) + '</div>' +
+             '<div class="bd"><div class="wh">' + m.who + '</div>' +
+             '<div class="tx">' + m.tx + '</div></div></div>';
+    }).join('');
+
+    // 心率迷你趋势：复用主图表数据
+    var spark = document.getElementById('bandSpark');
+    if(spark && typeof chart !== 'undefined' && chart && chart.data &&
+       chart.data.datasets && chart.data.datasets[0]){
+      var arr = (chart.data.datasets[0].data || []).slice(-12);
+      while(arr.length < 12) arr.unshift(arr[0] || 72);
+      var mx = Math.max.apply(null, arr.concat([100])) || 100;
+      spark.innerHTML = arr.map(function(v){
+        var h = Math.max(12, Math.round((v/mx)*100));
+        var hi = v > 100 ? ' class="hi"' : '';
+        return '<i' + hi + ' style="height:' + h + '%"></i>';
+      }).join('');
+    }else if(spark){
+      spark.innerHTML = [58,64,61,70,66,74,69,62,68,72,65,63]
+        .map(function(v){ return '<i style="height:' + v + '%"></i>'; }).join('');
+    }
+
+    // 用药提醒
+    var meds = [
+      {nm:'氨氯地平片', tm:'08:00', st:'done'},
+      {nm:'阿司匹林肠溶片', tm:'12:30', st:'due'},
+      {nm:'二甲双胍', tm:'19:00', st:'wait'}
+    ];
+    document.getElementById('bandMeds').innerHTML = meds.map(function(m){
+      return '<div class="wb-med ' + m.st + '"><span class="dot"></span>' +
+             '<span class="nm">' + m.nm + '</span>' +
+             '<span class="tm">' + m.tm + '</span></div>';
+    }).join('');
+  }
+
+  function openBand(){
+    bandEl.classList.add('show');
+    closeBtn.classList.add('show');
+    renderBandClock();
+    renderBandData();
+    wbBuildDots();
+    // 打开时回到表盘（第一张），符合「表盘是坐标原点」的手环习惯
+    WB_CURRENT = 0;
+    wbGo(0, false);
+  }
+  function closeBand(){
+    bandEl.classList.remove('show');
+    closeBtn.classList.remove('show');
+  }
+
+  if(switchBtn) switchBtn.onclick = openBand;
+  if(closeBtn) closeBtn.onclick = closeBand;
+
+  // 键盘左右翻页 + 滚轮翻页（桌面演示用；手机上直接左右滑）
+  document.addEventListener('keydown', function(e){
+    if(!bandEl.classList.contains('show')) return;
+    if(e.key === 'ArrowRight'){ wbGo(WB_CURRENT + 1); e.preventDefault(); }
+    else if(e.key === 'ArrowLeft'){ wbGo(WB_CURRENT - 1); e.preventDefault(); }
+  });
+  if(wbCards){
+    wbCards.addEventListener('wheel', function(e){
+      // 竖向滚轮映射为卡片翻页，避免在窄屏上滚不动
+      if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      clearTimeout(wbCards._wheelT);
+      wbCards._wheelT = setTimeout(function(){
+        wbGo(WB_CURRENT + (e.deltaY > 0 ? 1 : -1));
+      }, 20);
+    }, {passive:false});
+  }
+
+  // 手环端按钮
+  var bandSos = document.getElementById('bandSos');
+  if(bandSos) bandSos.onclick = function(){
+    if(confirm('确认拨打紧急呼救？将同时通知家属与社区。')){
+      fetch(API + '/api/sos/trigger', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({location:'手环端触发'})
+      }).catch(function(){}).finally(function(){
+        if(typeof toast === 'function') toast('SOS 已发出，家属与社区已收到通知','danger');
+      });
+    }
+  };
+  var bandCall = document.getElementById('bandCall');
+  if(bandCall) bandCall.onclick = function(){
+    if(typeof toast === 'function') toast('正在呼叫家属：女儿 李萍…','info');
+  };
+  var bandAck = document.getElementById('bandAck');
+  if(bandAck) bandAck.onclick = function(){
+    if(typeof toast === 'function') toast('已告知家人「我很好」','info');
+  };
+
+  // Esc 返回
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && bandEl.classList.contains('show')) closeBand();
+  });
+
+  // 手环端打开时跟随大屏数据刷新（每 3 秒同步一次，保持两端一致）
+  setInterval(function(){
+    if(bandEl.classList.contains('show')){ renderBandClock(); renderBandData(); }
+  }, 3000);
+
+  // 窗口尺寸变化时重算卡片位置（避免停留在半张卡片上）
+  window.addEventListener('resize', function(){
+    if(bandEl.classList.contains('show')) wbGo(WB_CURRENT, false);
+  });
+
+  // 暴露给控制台 / 测试
+  window.__openBand = openBand;
+  window.__closeBand = closeBand;
+  window.__wbGo = wbGo;
+  window.__wbCurrent = function(){ return WB_CURRENT; };
+  window.__wbCount = function(){ return WB_N; };
+  window.__login = function(u, p){
+    document.getElementById('loginUser').value = u;
+    document.getElementById('loginPass').value = p;
+    form.dispatchEvent(new Event('submit', {cancelable:true}));
+  };
+  window.__register = function(u, p, p2, role){
+    switchTab('register');
+    document.getElementById('regUser').value = u;
+    document.getElementById('regPass').value = p;
+    document.getElementById('regPass2').value = p2 === undefined ? p : p2;
+    if(role){
+      ROLE = role;
+      Array.prototype.forEach.call(
+        document.querySelectorAll('#rolePick .role-opt'), function(x){
+          x.classList.toggle('on', x.getAttribute('data-role') === role);
+        });
+    }
+    regForm.dispatchEvent(new Event('submit', {cancelable:true}));
+  };
+  window.__switchTab = switchTab;
+  window.__isLoggedIn = function(){ return !!(loginEl && loginEl.classList.contains('hide')); };
+})();
+
+</script>
+</body>
+</html>
