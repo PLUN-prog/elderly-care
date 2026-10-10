@@ -521,6 +521,83 @@ body{
 .sos-btn:hover{box-shadow:0 8px 30px rgba(220,38,38,.55)}
 .sos-tip{font-size:11.5px;color:var(--text-3);margin-top:14px;text-align:center;line-height:1.6}
 
+/* ---------- 紧急联系人（SOS / 一级预警的收件人名单） ---------- */
+.ec-hint{font-size:11.5px;color:var(--text-3);line-height:1.65;margin-bottom:11px}
+.ec-list{display:flex;flex-direction:column;gap:8px}
+.ec-row{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px
+}
+.ec-row.off{opacity:.5}
+.ec-idx{
+  width:22px;height:22px;flex-shrink:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:500;background:var(--accent-soft);color:var(--accent)
+}
+.ec-main{flex:1;min-width:0}
+.ec-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ec-role{
+  font-size:10px;padding:1px 7px;border-radius:99px;font-weight:400;
+  background:var(--surface);border:1px solid var(--border-strong);color:var(--text-3)
+}
+.ec-role.family{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.ec-role.community{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.ec-role.doctor{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.ec-role.emergency{background:var(--danger-bg);color:var(--danger);border-color:transparent}
+.ec-sub{font-size:11.5px;color:var(--text-3);margin-top:3px;line-height:1.6}
+.ec-sub b{color:var(--text-2);font-weight:500}
+.ec-sub .warnline{color:var(--warn)}
+.ec-ops{display:flex;gap:5px;flex-shrink:0}
+.ec-btn{
+  border:1px solid var(--border-strong);background:transparent;color:var(--text-3);
+  width:25px;height:25px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;padding:0;transition:all .16s
+}
+.ec-btn:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.ec-btn.dgr:hover{border-color:transparent;color:var(--danger);background:var(--danger-bg)}
+.ec-btn:disabled{opacity:.3;cursor:not-allowed}
+.ec-form{
+  margin-top:12px;padding:13px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface-2);display:none
+}
+.ec-form.show{display:block}
+.ec-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.ec-grid{grid-template-columns:1fr}}
+.ec-field label{display:block;font-size:11px;color:var(--text-3);margin-bottom:5px}
+.ec-field label .req{color:var(--danger)}
+.ec-field label .tip{color:var(--text-3);font-weight:400}
+select.ec-sel{
+  width:100%;padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px;
+  background:var(--bg-elev);color:var(--text);font-size:12.5px;font-family:inherit;
+  outline:none;cursor:pointer;transition:border-color .16s
+}
+select.ec-sel:focus{border-color:var(--accent-line)}
+.ec-chips{display:flex;gap:7px;flex-wrap:wrap}
+.ec-check{
+  font-size:11.5px;padding:5px 11px;border-radius:7px;cursor:pointer;user-select:none;
+  background:var(--surface);border:1px solid var(--border-strong);color:var(--text-3);
+  display:inline-flex;align-items:center;gap:5px;transition:all .16s
+}
+.ec-check.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent)}
+.ec-check input{display:none}
+.ec-check .na{font-size:10px;opacity:.72}
+.ec-warn{
+  margin-top:10px;font-size:11.5px;line-height:1.65;color:var(--warn);
+  background:var(--warn-bg);border-radius:8px;padding:8px 11px
+}
+.ec-warn div + div{margin-top:4px}
+.ec-plan{display:flex;flex-direction:column;gap:6px;margin:11px 0 15px}
+.ec-plan .pi{
+  display:flex;align-items:center;gap:9px;font-size:12px;
+  padding:8px 11px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)
+}
+.ec-plan .pi .pn{font-weight:500;flex-shrink:0}
+.ec-plan .pi .pc{margin-left:auto;color:var(--text-3);font-size:11px;text-align:right}
+.ec-plan .pi.bad{border-color:transparent;background:var(--danger-bg)}
+.ec-plan .pi.bad .pn,.ec-plan .pi.bad .pc{color:var(--danger)}
+.modal.wide{max-width:520px}
+.modal.ok h3{color:var(--text)}
+
 /* ---------- 输入 ---------- */
 input[type=text],input:not([type]){
   width:100%;padding:8px 11px;border:1px solid var(--border-strong);border-radius:8px;
@@ -1889,7 +1966,7 @@ input::placeholder{color:var(--text-3)}
               <span><i style="background:var(--surface-2);border:1px solid var(--border-strong)"></i>无人</span>
             </div>
             <div class="brow" style="margin-top:16px">
-              <button class="btn" id="btnBathroom">卫生间久滞模拟</button>
+              <button class="btn" id="btnBathroom" data-indoor="1">卫生间久滞模拟</button>
             </div>
           </div>
         </div>
@@ -2018,6 +2095,69 @@ input::placeholder{color:var(--text-3)}
         <div id="weeklyBox" class="report-box"></div>
       </div>
 
+      <!-- ===== 紧急联系人：SOS 与一级预警的收件人名单 =====
+           为什么要单独配一份名单：SOS 名义上「通知家属 + 社区网格员」，
+           但**社区网格员不是本系统用户**（没账号、没装小程序），
+           系统结构上推送不到他那儿。手机的做法是「紧急联系人」——
+           出事直接拨号/发短信，不要求对方装任何 App。本项目同理：
+             有账号的（家属）→ 应用内推送
+             没账号的（网格员/签约医生/120）→ 电话或短信 -->
+      <div class="card" id="contactsCard" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16.2 4.7a2 2 0 0 1 2 2v10.6a2 2 0 0 1-2 2H7.8a2 2 0 0 1-2-2V6.7a2 2 0 0 1 2-2z"/>
+              <path d="M9.6 4.7V3.5h4.8V4.7M12 9.6v4.4M9.8 11.8h4.4"/>
+            </svg>紧急联系人
+          </div>
+          <span class="cm" id="contactsSummary">呼救 / 一级预警的收件人名单</span>
+        </div>
+        <div class="ec-hint" id="contactsHint">
+          顺序即触达优先级。<b>有系统账号</b>的联系人走应用内推送；
+          <b>没有账号</b>的（社区网格员、签约医生、120）只能电话或短信 ——
+          与手机「紧急联系人」一样，不要求对方安装任何应用。
+        </div>
+        <div class="ec-list" id="contactList"><div class="empty">加载中…</div></div>
+        <div class="ec-warn" id="contactsWarn" style="display:none"></div>
+        <div class="brow" style="margin-top:12px">
+          <button class="btn" id="btnAddContact">添加联系人</button>
+        </div>
+
+        <!-- 新增 / 编辑表单 -->
+        <div class="ec-form" id="contactForm">
+          <div class="ec-grid">
+            <div class="ec-field">
+              <label>姓名 <span class="req">*</span></label>
+              <input id="ecName" placeholder="如：王社工" maxlength="20" />
+            </div>
+            <div class="ec-field">
+              <label>角色</label>
+              <select class="ec-sel" id="ecRole"></select>
+            </div>
+            <div class="ec-field">
+              <label>关系 / 称谓</label>
+              <input id="ecRelation" placeholder="如：女儿、社区网格员" maxlength="20" />
+            </div>
+            <div class="ec-field">
+              <label>联系电话</label>
+              <input id="ecPhone" placeholder="如：13800000000" maxlength="24" />
+            </div>
+          </div>
+          <div class="ec-field" style="margin-top:10px">
+            <label>通知方式 <span class="tip">— 应用内推送需对方有账号，否则会自动降级为短信</span></label>
+            <div class="ec-chips" id="ecChannels"></div>
+          </div>
+          <div class="ec-field" style="margin-top:10px">
+            <label>系统账号 <span class="tip">— 选填。填了才能「应用内推送」；社区网格员、120 没有账号，留空即可</span></label>
+            <input id="ecUsername" placeholder="如：demo（留空表示对方不是本系统用户）" maxlength="32" />
+          </div>
+          <div class="brow" style="margin-top:12px">
+            <button class="btn pri" id="ecSave">保存</button>
+            <button class="btn" id="ecCancel">取消</button>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="margin-top:14px">
         <div class="card-h">
           <div class="ct">
@@ -2028,7 +2168,7 @@ input::placeholder{color:var(--text-3)}
         </div>
         <div class="sos-wrap">
           <button class="sos-btn" id="btnSos">SOS</button>
-          <div class="sos-tip">点击立即通知家属 + 社区网格员<br/>并附带最近 5 分钟健康数据</div>
+          <div class="sos-tip" id="sosTip">点击按联系人名单依次通知<br/>并附带最近 5 分钟健康数据</div>
         </div>
       </div>
     </section>
@@ -2073,9 +2213,9 @@ input::placeholder{color:var(--text-3)}
           <span class="cm">观察融合判定与升级倒计时</span>
         </div>
         <div class="console">
-          <button class="btn dgr" id="btnDemoFall">一键跌倒（三源同步）</button>
+          <button class="btn dgr" id="btnDemoFall" data-indoor="1">一键跌倒（三源同步）</button>
           <button class="btn" id="btnDemoSuppress">误报抑制演示</button>
-          <button class="btn" id="btnDemoBed">夜间离床未归</button>
+          <button class="btn" id="btnDemoBed" data-indoor="1">夜间离床未归</button>
         </div>
         <div style="margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:1.65">
           「一键跌倒」同步雷达跌倒信号 + 手环应激 + 姿态序列，融合判定为「确认告警」；
@@ -2096,7 +2236,7 @@ input::placeholder{color:var(--text-3)}
         <div class="console">
           <span class="scene-tag v13">安全感知</span>
           <button class="btn dgr" id="btnDemoGas">燃气泄漏</button>
-          <button class="btn dgr" id="btnDemoVoice">语音呼救</button>
+          <button class="btn dgr" id="btnDemoVoice" data-indoor="1">语音呼救</button>
           <button class="btn" id="btnDemoVoiceSup">声学误报抑制</button>
         </div>
         <div class="console">
@@ -2117,9 +2257,10 @@ input::placeholder{color:var(--text-3)}
 
 <!-- SOS 确认弹窗 -->
 <div class="modal-mask" id="sosModal">
-  <div class="modal">
+  <div class="modal wide">
     <h3>确认触发 SOS 呼救？</h3>
-    <p>系统将立即向所有家属和社区网格员广播呼救信号，并附带最近 5 分钟健康数据上下文。</p>
+    <p>系统将按<b>紧急联系人名单</b>依次通知，并附带最近 5 分钟健康数据上下文。</p>
+    <div class="ec-plan" id="sosPlanPreview"></div>
     <div class="actions">
       <button class="btn" id="sosCancel">取消</button>
       <button class="btn dgr" id="sosConfirm">立即呼救</button>
@@ -2127,10 +2268,31 @@ input::placeholder{color:var(--text-3)}
   </div>
 </div>
 
+<!-- SOS 触达结果（逐人说明走哪个渠道、是否送到） -->
+<div class="modal-mask" id="sosResultModal">
+  <div class="modal wide ok">
+    <h3 id="sosResTitle">呼救已发出</h3>
+    <p id="sosResMsg"></p>
+    <div class="ec-plan" id="sosResPlan"></div>
+    <div class="actions">
+      <button class="btn" id="sosResClose">知道了</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const API = location.origin; // 同源访问后端
+/* API_BASE_INJECT_POINT */
+window.__API_BASE__ = "https://elderly-care-monitor.app.workbuddy.host";
+/* 后端地址。
+   本地跑「启动演示-完整版.bat」时前后端同源，location.origin 就是对的；
+   但页面被放上**纯静态托管**（GitHub Pages 等）时，页面本身没有后端，
+   构建时会往上面那行注入 window.__API_BASE__ 指向真实的线上后端。
+   —— 这样入口地址仍然是 GitHub，注册/登录却是真的打到后端落库。 */
+const API = (typeof window !== 'undefined' && window.__API_BASE__)
+  ? String(window.__API_BASE__).replace(/\/+$/, '')
+  : location.origin;
 
 /* ============================================================
    账号 → 监测对象（老人）绑定
@@ -2363,6 +2525,32 @@ function offlinePost(rawPath, body){
   // ⚠️ 这里**必须**在「其余写操作默认成功」之前拦截：
   // 否则会走到兜底的 {ok:true}，响应里**没有 elder_id**，
   // 前端拿不到新档案 ID → 绑定失败 → 界面卡在空状态（表现为"点了没反应"）。
+  // ---- 紧急联系人名单：写进本地档案 / 快照（离线演示用） ----
+  // 必须排在下面「新增老人档案」之前：那个分支会把 /api/elderly/ 开头的
+  // 请求一律当成建档，把联系人请求吃掉，表现为「点了保存没反应」。
+  if(path.indexOf('/api/elderly/') >= 0 && path.indexOf('/contacts') >= 0){
+    const m = /\/api\/elderly\/([^/?]+)\/contacts/.exec(path);
+    const eid = m ? decodeURIComponent(m[1]) : '';
+    const normalized = ecNormalize(parseBody(body).contacts);
+    if(eid === DEMO_ELDER_ID){
+      const ep = OFFLINE.snap['/api/elderly/' + DEMO_ELDER_ID];
+      if(ep) ep.contacts = normalized;
+    }else{
+      const db = loadLocalElders();
+      if(!db[eid]){
+        return jsonResponse({ok:false, error:'档案 ' + eid + ' 不存在'}, 404);
+      }
+      db[eid].contacts = normalized;
+      saveLocalElders(db);
+    }
+    return jsonResponse({ok:true, elder_id:eid, data:normalized,
+                         warnings:ecWarnings(normalized)});
+  }
+
+  // ---- 新增 / 更新老人档案（离线） ----
+  // ⚠️ 本分支必须显式回传 elder_id：否则会走到兜底的 {ok:true}，
+  // 响应里**没有 elder_id**，前端拿不到新档案 ID → 绑定失败 → 界面卡在空状态
+  // （表现为"点了没反应"）。
   if(path.startsWith('/api/elderly/')){
     const jb = parseBody(body);
     const db = loadLocalElders();
@@ -2371,14 +2559,20 @@ function offlinePost(rawPath, body){
     if(!jb.name){
       return jsonResponse({ok:false, error:'请填写老人姓名'}, 400);
     }
+    const prev = db[eid] || {};
     db[eid] = {
       elder_id: eid, name: jb.name, age: parseInt(jb.age, 10) || 0,
       gender: jb.gender || 'female', address: jb.address || '',
       chronic_diseases: jb.chronic_diseases || [],
-      medications: [], families: [], _local: true
+      medications: prev.medications || [],
+      // contacts 未传时保留旧值，避免「编辑基础资料」把联系人清空（与后端一致）
+      contacts: jb.contacts !== undefined
+        ? ecNormalize(jb.contacts) : (prev.contacts || []),
+      _local: true
     };
     saveLocalElders(db);
-    return jsonResponse({ok:true, elder_id:eid, profile:db[eid]}, 201);
+    return jsonResponse({ok:true, elder_id:eid, profile:db[eid],
+                         warnings:ecWarnings(db[eid].contacts)}, 201);
   }
 
   // ---- 账号绑定：离线时写进本地账号库 ----
@@ -2457,16 +2651,125 @@ function eidFromPath(path){
   return '';
 }
 
+/** 与后端 `residence_not_paired()` 对齐的「住所尚未接入设备」响应体。
+ *  两处必须保持一致，否则线上（离线）与本地（后端）表现会不一样。 */
+function notPairedPayload(eid){
+  return {
+    connected: false,
+    elder_id: String(eid || ''),
+    reason: 'device_not_paired',
+    message: '该住所尚未接入传感设备'
+  };
+}
+
+/* ---------- 离线模式下的「紧急联系人」精简镜像 ----------
+   权威实现是后端 models.schemas.normalize_contacts + services.notification
+   .build_notification_plan。这里只为让静态托管（GitHub Pages）也能真实地
+   增删改查联系人；语义刻意与后端保持一致（顺序即优先级、渠道白名单、
+   「应用内推送」需对方有账号），否则线上线下的表现会不一样。 */
+const EC_META_FALLBACK = {
+  roles: [
+    {key:'family',    label:'家属',       default_channels:['app','sms']},
+    {key:'community', label:'社区网格员', default_channels:['phone','sms']},
+    {key:'doctor',    label:'签约医生',   default_channels:['sms']},
+    {key:'emergency', label:'120急救',    default_channels:['phone']}
+  ],
+  channels: [{key:'app', label:'应用内推送'},
+             {key:'sms', label:'短信'},
+             {key:'phone', label:'电话'}],
+  need_account: ['app']
+};
+
+function ecNormChannels(chans, role){
+  const allow = EC_META_FALLBACK.channels.map(c=>c.key);
+  let out = Array.isArray(chans) ? chans.filter(c=>allow.indexOf(c) >= 0) : [];
+  if(!out.length){
+    const r = EC_META_FALLBACK.roles.find(x=>x.key===role);
+    out = ((r && r.default_channels) || ['sms']).slice();
+  }
+  return out;
+}
+
+function ecNormalize(list){
+  if(!Array.isArray(list)) return [];
+  const seen = {};
+  const out = [];
+  list.forEach((it, i)=>{
+    if(!it || typeof it !== 'object') return;
+    const name = String(it.name || '').trim();
+    if(!name) return;
+    const role = EC_META_FALLBACK.roles.some(r=>r.key===it.role) ? it.role : 'family';
+    let id = String(it.id || '').trim() || ('c' + (i + 1));
+    while(seen[id]) id += '_';
+    seen[id] = 1;
+    out.push({
+      id: id, name: name, role: role,
+      relation: String(it.relation || '').trim() || ecRoleLabel(role),
+      phone: String(it.phone || '').trim(),
+      channels: ecNormChannels(it.channels, role),
+      priority: out.length + 1,
+      enabled: it.enabled !== false,
+      username: String(it.username || '').trim()
+    });
+  });
+  return out;
+}
+
+/** 历史 families 字段 → 紧急联系人（与后端 legacy_families_to_contacts 对齐） */
+function ecLegacyFamilies(families){
+  if(!Array.isArray(families)) return [];
+  return families.filter(f=>f && f.name).map(f=>({
+    name: f.name, role: f.community ? 'community' : 'family',
+    relation: f.relation || '', phone: f.phone || '',
+    channels: f.community ? ['phone', 'sms'] : ['app', 'sms']
+  }));
+}
+
+/** 「配了但对方收不到」的提醒（与后端 outgoing_warnings 对齐） */
+function ecWarnings(list){
+  const out = [];
+  (list || []).forEach(c=>{
+    if(c.enabled === false) return;
+    const need = (c.channels || []).filter(
+      ch=>EC_META_FALLBACK.need_account.indexOf(ch) >= 0);
+    if(need.length && !c.username){
+      out.push('「' + c.name + '」（' + ecRoleLabel(c.role) +
+        '）未绑定系统账号，勾选的应用内推送将自动降级为短信；' +
+        '如需应用内推送，请让对方注册账号后填写用户名。');
+    }
+    if(!c.phone && (c.channels || []).some(ch=>ch === 'sms' || ch === 'phone')){
+      out.push('「' + c.name + '」未填写电话号码，短信/电话渠道无法送达。');
+    }
+  });
+  return out;
+}
+
+function offlineContactsResponse(eid, ep){
+  const raw = (ep && Array.isArray(ep.contacts) && ep.contacts.length)
+    ? ep.contacts
+    : ecLegacyFamilies(ep && ep.families);
+  const data = ecNormalize(raw);
+  return jsonResponse({
+    elder_id: eid, data: data, accounts: [], warnings: ecWarnings(data),
+    roles: EC_META_FALLBACK.roles, channels: EC_META_FALLBACK.channels,
+    need_account: EC_META_FALLBACK.need_account
+  });
+}
+
 function handleOfflineGet(url){
   const path = toApiPath(url);
   const st = OFFLINE.state;
 
-  /* ⚠️ 离线快照里**只有演示老人（E001）**的数据。
-     若当前会话绑定的是新建老人，直接取快照会把李奶奶的体征/预警
+  /* ⚠️ 离线快照里**只有演示老人（E001）那一套房子的数据**。
+     若当前会话绑定的是新建老人，直接取快照会把李奶奶的体征/预警/家居读数
      当成新老人的数据展示 —— 正是本项目反复强调的「不得展示他人数据」硬伤。
-     因此这里先判定 elder_id：非演示老人一律返回**空数据**，
+     因此这里先判定 elder_id：非演示老人一律返回**空数据**或「未接入」，
      让看板显示「等待数据上报」而不是别人的数字。
-     全局设备状态（门磁/房间/安全）是**住所级**的，与老人无关，照常返回。 */
+
+     ⚠️ 住所级设备（门磁 / 房间 / 居家安全 / 声学 / 环境 / 雷达）**同样要分流**。
+     这里原本写着「住所级与老人无关，照常返回」—— 那个假设是错的：
+     **每个监测对象对应一个独立的住所**。新老人刚建档、还没配对任何设备，
+     它的家不该出现甲烷浓度、房间轨迹、离家时长这些读数（用户当场发现过）。 */
   const reqEid = (function(){
     // 优先从 URL 取；取不到则用当前会话的老人（如 /api/alert/?limit=20 这类
     // 不带 elder_id 的接口——历史遗留，前端按"当前老人"语义调用）
@@ -2476,9 +2779,26 @@ function handleOfflineGet(url){
   })();
   const isOtherElder = reqEid && reqEid !== DEMO_ELDER_ID;
 
-  if(path.startsWith('/api/door/status')) return jsonResponse(st.door);
-  if(path.startsWith('/api/room/status')) return jsonResponse(st.room);
-  if(path.startsWith('/api/safety/status')) return jsonResponse(st.safety);
+  /* 紧急联系人名单：快照里没有独立的 contacts 接口，
+     演示老人从快照的档案里取，新老人从本地档案库取
+     （contacts 优先，老字段 families 兜底迁移 —— 与后端同语义）。 */
+  if(path.indexOf('/api/elderly/') >= 0 && path.indexOf('/contacts') >= 0){
+    if(isOtherElder){
+      return offlineContactsResponse(reqEid, loadLocalElders()[reqEid]);
+    }
+    return offlineContactsResponse(
+      DEMO_ELDER_ID, OFFLINE.snap['/api/elderly/' + DEMO_ELDER_ID]);
+  }
+
+  // 住所级设备：未配对设备的住所返回「未接入」，不返回演示老人家的读数
+  if(path.startsWith('/api/door/status')
+     || path.startsWith('/api/room/status')
+     || path.startsWith('/api/safety/status')){
+    if(isOtherElder) return jsonResponse(notPairedPayload(reqEid));
+    if(path.startsWith('/api/door/status')) return jsonResponse(st.door);
+    if(path.startsWith('/api/room/status')) return jsonResponse(st.room);
+    return jsonResponse(st.safety);
+  }
   if(path.startsWith('/api/alert/')){
     // 新老人：没有历史预警
     if(isOtherElder) return jsonResponse({data:[]});
@@ -2488,6 +2808,11 @@ function handleOfflineGet(url){
   if(path.startsWith('/api/escalation/status')) return jsonResponse({data:[]});
 
   if(isOtherElder){
+    // 住所级设备：新老人的家尚未配对设备，明确告知「未接入」，
+    // 而不是返回 0 或空对象让界面看起来像「设备正常但读数为零」
+    if(path.startsWith('/api/audio/status')) return jsonResponse(notPairedPayload(reqEid));
+    if(path.startsWith('/api/env/status')) return jsonResponse(notPairedPayload(reqEid));
+    if(path.startsWith('/api/mmwave/status')) return jsonResponse(notPairedPayload(reqEid));
     // 逐类给出**结构正确但内容为空**的响应，保证渲染函数不报错
     if(path.startsWith('/api/health/latest')) return jsonResponse({});
     if(path.startsWith('/api/health/')) return jsonResponse({data:[]});
@@ -2568,6 +2893,20 @@ const SAFETY_LIMIT = {gas:3000, gas_warn:1000, smoke:0.35, smoke_warn:0.15,
 window.STATE = STATE;
 window.SAFETY_LIMIT = SAFETY_LIMIT;
 
+/** 该帧是否表示「住所尚未接入设备」。
+ *
+ * 后端对没有配对过设备的老人，住所级接口返回
+ * `{connected:false, reason:'device_not_paired'}`。
+ *
+ * 这种情况必须显示「未接入」并**清掉上一次的读数** ——
+ * 否则会出现「这个家根本没接设备，却显示甲烷 98.9 ppm」
+ * 这种自相矛盾的画面（用户当场发现过）。
+ */
+function notPaired(f){
+  return !!(f && f.connected === false);
+}
+const NP = '未接入';
+
 // ---- 居家安全（燃气 / 烟雾 / 漏水）----
 function setGauge(barId, ratio, lv){
   const b = document.getElementById(barId);
@@ -2576,7 +2915,18 @@ function setGauge(barId, ratio, lv){
   b.style.background = lv===2 ? 'var(--danger)' : lv===1 ? 'var(--warn)' : 'var(--ok)';
 }
 function updateSafety(f){
-  if(!f || f.gas_ppm===undefined) return;
+  if(!f) return;
+  if(notPaired(f)){
+    STATE.safety = null;   // 清掉旧帧，computeScore 才不会拿它继续扣分
+    ['safetyGas','safetySmoke','safetyWater','safetyRoom']
+      .forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = NP; });
+    setGauge('barGas', 0, 0); setGauge('barSmoke', 0, 0); setGauge('barWater', 0, 0);
+    const np = document.getElementById('safetyPill');
+    np.textContent = NP; np.className = 'pill';
+    updateScore();
+    return;
+  }
+  if(f.gas_ppm===undefined) return;
   STATE.safety = f;
   document.getElementById('safetyGas').textContent = f.gas_ppm + ' ppm';
   document.getElementById('safetySmoke').textContent = f.smoke;
@@ -2599,7 +2949,24 @@ function updateSafety(f){
 
 // ---- 门窗磁 + 声学 ----
 function updateDoor(f){
-  if(!f || f.at_home===undefined) return;
+  if(!f) return;
+  if(notPaired(f)){
+    // ⚠️ 必须置成一个**没有 at_home 的显式状态**。
+    // 若沿用旧帧或留空对象，computeScore 里的 `!d.at_home` 会把
+    // 「没有门磁」误判成「老人外出」，凭空扣分。
+    STATE.door = {connected:false};
+    document.getElementById('doorState').textContent = NP;
+    document.getElementById('windowState').textContent = NP;
+    document.getElementById('homeState').textContent = '—';
+    document.getElementById('awaySec').textContent = '—';
+    const np = document.getElementById('doorPill');
+    np.textContent = NP; np.className = 'pill';
+    // 连"老人在不在家"都不知道，室内事件按钮自然也不该出现
+    document.querySelectorAll('[data-indoor="1"]').forEach(b => { b.style.display = 'none'; });
+    updateScore();
+    return;
+  }
+  if(f.at_home===undefined) return;
   STATE.door = f;
   document.getElementById('doorState').textContent = f.door_open?'开启':'关闭';
   document.getElementById('windowState').textContent = f.window_open?'开启':'关闭';
@@ -2614,6 +2981,11 @@ function updateDoor(f){
   else if(st==='away'){ p.textContent='未归'; p.className='pill warn'; }
   else if(st==='lost'){ p.textContent='疑似走失'; p.className='pill bad'; }
   else { p.textContent='外出中'; p.className='pill'; }
+  // 老人外出时，所有「室内才可能发生的事件」模拟按钮不再显示，
+  // 避免用户看到按钮、点了却发现"没数据"。燃气泄漏等房屋属性按钮保留。
+  document.querySelectorAll('[data-indoor="1"]').forEach(b => {
+    b.style.display = f.at_home ? '' : 'none';
+  });
   updateScore();
 }
 // 时长友好格式化：秒 → 「12 分钟」/「1 小时 5 分」
@@ -2626,7 +2998,15 @@ function fmtDur(sec){
   return rm ? `${h} 小时 ${rm} 分` : `${h} 小时`;
 }
 function updateAudio(f){
-  if(!f || f.noise_db===undefined) return;
+  if(!f) return;
+  if(notPaired(f)){
+    STATE.audio = null;
+    document.getElementById('audioDb').textContent = NP;
+    const el = document.getElementById('audioEvent');
+    el.textContent = NP; el.style.color = '';
+    return;
+  }
+  if(f.noise_db===undefined) return;
   STATE.audio = f;
   document.getElementById('audioDb').textContent = f.noise_db + ' dB';
   const parts = [];
@@ -2676,7 +3056,9 @@ function computeScore(){
 
   // 离家：封顶 20
   const d = STATE.door;
-  if(d && !d.at_home) pAway = Math.min(20, Math.floor((d.away_sec||0)/60)*8);
+  // ⚠️ 必须显式判 `=== false`：住所未接入门磁时 at_home 是 undefined，
+  // 写成 `!d.at_home` 会把「没有门磁」当成「老人外出」，凭空扣分。
+  if(d && d.at_home === false) pAway = Math.min(20, Math.floor((d.away_sec||0)/60)*8);
 
   return Math.max(0, Math.round(100 - pEvent - pVital - pSafety - pAway));
 }
@@ -2749,14 +3131,17 @@ function renderTimeline(){
   }).join('');
 }
 
+// ⚠️ 住所级接口一律带 elder_id。
+// 不带参数时后端会退回「演示老人」那一套全局传感器 ——
+// 新账号就会看到李奶奶家的门磁 / 燃气 / 声压读数（真实发生过）。
 async function pollSafety(){
-  try{ updateSafety(await fetch(API+'/api/safety/status').then(r=>r.json())); }catch(e){}
+  try{ updateSafety(await fetch(API+'/api/safety/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 async function pollDoor(){
-  try{ updateDoor(await fetch(API+'/api/door/status').then(r=>r.json())); }catch(e){}
+  try{ updateDoor(await fetch(API+'/api/door/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 async function pollAudio(){
-  try{ updateAudio(await fetch(API+'/api/audio/status').then(r=>r.json())); }catch(e){}
+  try{ updateAudio(await fetch(API+'/api/audio/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 
 // ---- 通用：室内演示动作（外出时后端会拒绝，前端如实提示）----
@@ -2898,6 +3283,18 @@ function toggleAlert(id, on){
 const LEVEL_NAME = {L1:'一级·紧急', L2:'二级·关注', L3:'三级·趋势', SOS:'SOS'};
 function whoText(a){
   const names={family:'家属',community:'社区网格员',doctor:'签约医生',self:'本人',emergency:'120急救'};
+  // 后端下发了**触达计划**时，直接报真实姓名 —— 不再笼统说「家属 + 社区网格员」，
+  // 因为社区网格员根本没账号，笼统一句话会让人误以为他一定收到了。
+  const plan = a && a.contact_plan;
+  if(plan && plan.items && plan.items.length){
+    const ok = plan.items.filter(i=>i.delivered !== false).map(i=>i.name);
+    if(!ok.length) return '推送：名单内无人可触达';
+    return '推送：'+ok.slice(0,3).join('、')+(ok.length>3?' 等':'');
+  }
+  if(plan && plan.has_contacts === false) return '推送：尚未配置紧急联系人';
+  // 无计划信息（历史库里的旧事件）时，退化为按当前名单判断，
+  // 至少不会在「还没配联系人」时谎报「已推送给家属和网格员」
+  if(!CONTACTS.length) return '推送：尚未配置紧急联系人';
   if(a.channels&&a.channels.length)
     return '推送：'+a.channels.map(c=>names[c]||c).join(' + ');
   if(a.level==='L1'||a.level==='SOS') return '推送：家属 + 社区网格员';
@@ -3064,16 +3461,358 @@ document.getElementById('btnPostureLoop').onclick = async ()=>{
   toast('姿态识别演示已触发，请观察预警列表','warn');
 };
 
+/* ============================================================
+   紧急联系人（SOS / 一级预警的收件人名单）
+   ------------------------------------------------------------
+   回答一个容易漏掉的问题：「SOS 推送给家属和网格员」——
+   家属能收到，是因为家属**有账号**（登录着、连着长连接）；
+   那**社区网格员呢**？他不是本系统的用户，没账号、没装小程序，
+   系统结构上就推送不到他那儿。旧实现只是往 socket 广播一下、
+   日志里写死 delivered=True，换成一个没账号的人就完全收不到。
+
+   手机的做法是「紧急联系人」：出事直接拨号/发短信，
+   **不要求对方安装任何 App**。本项目沿用同一语义：
+     有账号的（家属）          → 应用内推送
+     没账号的（网格员/医生/120）→ 电话或短信
+   渠道能不能用，由「对方到底有没有账号 / 有没有填电话」决定；
+   不可用时**显式降级并写明原因**，绝不静默丢掉通知。
+   ============================================================ */
+const EC_ACCOUNT_CHANNELS = ['app'];   // 这些渠道要求「对方有系统账号」
+
+let CONTACTS = [];              // 当前老人的名单（数组顺序 = 触达优先级）
+let CONTACT_META = {            // 默认值：进页面先能渲染，随后用后端返回覆盖
+  roles: [
+    {key:'family',    label:'家属',       default_channels:['app','sms']},
+    {key:'community', label:'社区网格员', default_channels:['phone','sms']},
+    {key:'doctor',    label:'签约医生',   default_channels:['sms']},
+    {key:'emergency', label:'120急救',    default_channels:['phone']}
+  ],
+  channels: [
+    {key:'app',   label:'应用内推送'},
+    {key:'sms',   label:'短信'},
+    {key:'phone', label:'电话'}
+  ]
+};
+let ecEditIndex = -1;           // -1 = 新增；>=0 = 编辑第 i 位
+let ecFormChannels = [];        // 表单里当前勾选的渠道
+
+function ecEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ecRoleLabel(k){
+  const r = (CONTACT_META.roles||[]).find(x=>x.key===k);
+  return r ? r.label : (k || '家属');
+}
+function ecChannelLabel(k){
+  const c = (CONTACT_META.channels||[]).find(x=>x.key===k);
+  return c ? c.label : k;
+}
+function ecRoleDefaults(k){
+  const r = (CONTACT_META.roles||[]).find(x=>x.key===k);
+  return (r && r.default_channels) ? r.default_channels.slice() : ['sms'];
+}
+
+/** 拉取名单 + 可选项元数据（离线模式会自动走本地快照） */
+async function loadContacts(){
+  try{
+    const r = await fetch(API + '/api/elderly/' + encodeURIComponent(EID) + '/contacts');
+    const j = await r.json();
+    if(Array.isArray(j.roles) && j.roles.length) CONTACT_META.roles = j.roles;
+    if(Array.isArray(j.channels) && j.channels.length) CONTACT_META.channels = j.channels;
+    CONTACTS = Array.isArray(j.data) ? j.data : [];
+    setContactsWarn(j.warnings || []);
+  }catch(e){
+    CONTACTS = [];
+    setContactsWarn([]);
+  }
+  renderContacts();
+}
+
+function setContactsWarn(list){
+  const box = document.getElementById('contactsWarn');
+  if(!box) return;
+  if(!list || !list.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display = '';
+  box.innerHTML = '<b>⚠ 配置提醒</b>' + list.map(w=>'<div>· '+ecEsc(w)+'</div>').join('');
+}
+
+/** 渲染联系人列表。列表里的描述必须**如实**反映实际触达方式：
+ *  勾了「应用内推送」但对方没账号时，要当场说明会降级，不能让人误以为送达。 */
+function renderContacts(){
+  const box = document.getElementById('contactList');
+  if(!box) return;
+  const sum = document.getElementById('contactsSummary');
+
+  if(!CONTACTS.length){
+    box.innerHTML = '<div class="empty">尚未配置紧急联系人<br/>'
+                  + '呼救发出后<b>没有人会收到通知</b>，请至少添加一位家属或社区网格员</div>';
+    if(sum) sum.textContent = '尚未配置 · 呼救无人接收';
+    updateSosTip();
+    return;
+  }
+  const enabled = CONTACTS.filter(c=>c.enabled !== false).length;
+  if(sum) sum.textContent = '共 '+CONTACTS.length+' 位 · 启用 '+enabled+' 位';
+
+  box.innerHTML = CONTACTS.map((c,i)=>{
+    const role  = c.role || 'family';
+    const off   = c.enabled === false;
+    const hasAcc= !!(c.username || '');
+    const phone = (c.phone || '').trim();
+    const chans = (c.channels && c.channels.length) ? c.channels : ecRoleDefaults(role);
+    const labels= chans.map(ecChannelLabel).join(' + ');
+    const needAcc = chans.some(ch=>EC_ACCOUNT_CHANNELS.indexOf(ch)>=0) && !hasAcc;
+
+    const bits = [];
+    bits.push(phone ? ecEsc(phone) : '<span class="warnline">未填电话</span>');
+    bits.push(ecEsc(labels));
+    bits.push(hasAcc
+      ? '已绑定账号 <b>'+ecEsc(c.username)+'</b>'
+      : '未绑定账号');
+    let sub = bits.join(' · ');
+    if(needAcc){
+      sub += ' <span class="warnline">（无账号，「应用内推送」将降级为短信）</span>';
+    }
+    if(!phone){
+      sub += ' <span class="warnline">（无号码，短信/电话发不出去）</span>';
+    }
+    if(off){
+      sub += ' <span class="warnline">（已停用，本次不通知）</span>';
+    }
+
+    return '<div class="ec-row'+(off?' off':'')+'">'
+      + '<span class="ec-idx">'+(i+1)+'</span>'
+      + '<div class="ec-main">'
+      +   '<div class="ec-name">'+ecEsc(c.name)
+      +     '<span class="ec-role '+ecEsc(role)+'">'+ecEsc(ecRoleLabel(role))+'</span>'
+      +     (c.relation ? '<span class="ec-role">'+ecEsc(c.relation)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="ec-sub">'+sub+'</div>'
+      + '</div>'
+      + '<div class="ec-ops">'
+      +   '<button class="ec-btn" data-act="up" data-i="'+i+'" title="上移（提高优先级）"'
+      +     (i===0?' disabled':'')+'>↑</button>'
+      +   '<button class="ec-btn" data-act="down" data-i="'+i+'" title="下移（降低优先级）"'
+      +     (i===CONTACTS.length-1?' disabled':'')+'>↓</button>'
+      +   '<button class="ec-btn" data-act="toggle" data-i="'+i+'" title="'
+      +     (off?'启用':'停用')+'">'+(off?'○':'●')+'</button>'
+      +   '<button class="ec-btn" data-act="edit" data-i="'+i+'" title="编辑">✎</button>'
+      +   '<button class="ec-btn dgr" data-act="del" data-i="'+i+'" title="删除">✕</button>'
+      + '</div></div>';
+  }).join('');
+  updateSosTip();
+}
+
+/** SOS 提示语里带上真实名单规模，避免「点了却没人收到」的意外 */
+function updateSosTip(){
+  const tip = document.getElementById('sosTip');
+  if(!tip) return;
+  const on = CONTACTS.filter(c=>c.enabled !== false && (c.phone || c.username));
+  if(!on.length){
+    tip.innerHTML = '<span style="color:var(--warn)">尚未配置有效的紧急联系人</span><br/>'
+                  + '呼救将只被记录，不会通知到任何人';
+  }else{
+    tip.innerHTML = '点击按名单依次通知 '+on.length+' 位联系人<br/>'
+                  + '并附带最近 5 分钟健康数据';
+  }
+}
+
+// ---- 表单 ----
+function renderRoleSelect(){
+  const sel = document.getElementById('ecRole');
+  if(!sel) return;
+  sel.innerHTML = (CONTACT_META.roles||[]).map(r=>
+    '<option value="'+ecEsc(r.key)+'">'+ecEsc(r.label)+'</option>').join('');
+}
+function renderChannelChips(){
+  const box = document.getElementById('ecChannels');
+  if(!box) return;
+  box.innerHTML = (CONTACT_META.channels||[]).map(c=>{
+    const on = ecFormChannels.indexOf(c.key) >= 0;
+    const na = EC_ACCOUNT_CHANNELS.indexOf(c.key) >= 0
+             ? ' <span class="na">需账号</span>' : '';
+    return '<label class="ec-check'+(on?' on':'')+'" data-ch="'+ecEsc(c.key)+'">'
+         + '<input type="checkbox"'+(on?' checked':'')+'/>'
+         + ecEsc(c.label)+na+'</label>';
+  }).join('');
+}
+
+function openContactForm(idx){
+  ecEditIndex = (typeof idx === 'number') ? idx : -1;
+  const c = ecEditIndex >= 0 ? CONTACTS[ecEditIndex] : null;
+  renderRoleSelect();
+  document.getElementById('ecName').value     = c ? (c.name||'') : '';
+  document.getElementById('ecRole').value     = c ? (c.role||'family') : 'family';
+  document.getElementById('ecRelation').value = c ? (c.relation||'') : '';
+  document.getElementById('ecPhone').value    = c ? (c.phone||'') : '';
+  document.getElementById('ecUsername').value = c ? (c.username||'') : '';
+  ecFormChannels = c ? ((c.channels&&c.channels.length)?c.channels.slice()
+                                                   :ecRoleDefaults(c.role||'family'))
+                     : ecRoleDefaults('family');
+  renderChannelChips();
+  document.getElementById('contactForm').classList.add('show');
+  document.getElementById('ecName').focus();
+}
+function closeContactForm(){
+  ecEditIndex = -1;
+  document.getElementById('contactForm').classList.remove('show');
+}
+
+async function saveContacts(okMsg){
+  // ⚠️ 必须按**当前数组位置**重排 priority 再提交。
+  // 后端 normalize_contacts 会按 priority 排序；如果原样把旧的 priority 一起发过去，
+  // 用户刚拖出来的顺序会被后端按旧优先级排回去 —— 表现为「点了上移又弹回原位」。
+  const payload = CONTACTS.map((c, i)=>Object.assign({}, c, { priority: i + 1 }));
+  const r = await fetch(API + '/api/elderly/' + encodeURIComponent(EID) + '/contacts', {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ contacts: payload })
+  });
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok || j.ok === false){
+    toast((j && j.error) || '保存失败，请重试', 'warn');
+    return false;
+  }
+  CONTACTS = Array.isArray(j.data) ? j.data : CONTACTS;
+  setContactsWarn(j.warnings || []);
+  renderContacts();
+  if(okMsg) toast(okMsg, 'info');
+  return true;
+}
+
+document.getElementById('btnAddContact').onclick = ()=>openContactForm(-1);
+document.getElementById('ecCancel').onclick = closeContactForm;
+// 角色切换 → 自动带上该角色的默认渠道（家属：应用内推送+短信；网格员：电话+短信）
+document.getElementById('ecRole').onchange = (e)=>{
+  if(ecEditIndex < 0) ecFormChannels = ecRoleDefaults(e.target.value);
+  renderChannelChips();
+};
+// 渠道勾选
+document.getElementById('ecChannels').onclick = (e)=>{
+  const lab = e.target.closest('.ec-check');
+  if(!lab) return;
+  const key = lab.getAttribute('data-ch');
+  const i = ecFormChannels.indexOf(key);
+  if(i >= 0) ecFormChannels.splice(i,1); else ecFormChannels.push(key);
+  renderChannelChips();
+};
+document.getElementById('ecSave').onclick = async ()=>{
+  const name = document.getElementById('ecName').value.trim();
+  if(!name){ toast('请填写联系人姓名','warn'); return; }
+  const phone = document.getElementById('ecPhone').value.trim();
+  if(!phone && !document.getElementById('ecUsername').value.trim() && !ecFormChannels.length){
+    toast('请至少填写电话，或勾选一种通知方式','warn'); return;
+  }
+  const item = {
+    id: ecEditIndex >= 0 ? (CONTACTS[ecEditIndex].id || '') : '',
+    name: name,
+    role: document.getElementById('ecRole').value,
+    relation: document.getElementById('ecRelation').value.trim(),
+    phone: phone,
+    channels: ecFormChannels.slice(),
+    enabled: ecEditIndex >= 0 ? (CONTACTS[ecEditIndex].enabled !== false) : true,
+    username: document.getElementById('ecUsername').value.trim()
+  };
+  if(ecEditIndex >= 0) CONTACTS[ecEditIndex] = item;
+  else CONTACTS.push(item);
+  if(await saveContacts('紧急联系人已保存')){
+    closeContactForm();
+  }else{
+    // 保存失败要回滚，否则界面与后端不一致
+    await loadContacts();
+  }
+};
+// 列表操作（事件委托）
+document.getElementById('contactList').onclick = async (e)=>{
+  const btn = e.target.closest('button[data-act]');
+  if(!btn || btn.disabled) return;
+  const i = parseInt(btn.getAttribute('data-i'), 10);
+  const act = btn.getAttribute('data-act');
+  if(!(i >= 0) || i >= CONTACTS.length) return;
+  if(act === 'up' && i > 0){
+    const t = CONTACTS[i]; CONTACTS[i] = CONTACTS[i-1]; CONTACTS[i-1] = t;
+  }else if(act === 'down' && i < CONTACTS.length-1){
+    const t = CONTACTS[i]; CONTACTS[i] = CONTACTS[i+1]; CONTACTS[i+1] = t;
+  }else if(act === 'toggle'){
+    CONTACTS[i].enabled = (CONTACTS[i].enabled === false);
+  }else if(act === 'edit'){
+    openContactForm(i); return;
+  }else if(act === 'del'){
+    if(!confirm('删除紧急联系人「'+CONTACTS[i].name+'」？')) return;
+    CONTACTS.splice(i,1);
+  }else{
+    return;
+  }
+  await saveContacts();
+};
+
 // ---- SOS ----
-document.getElementById('btnSos').onclick = ()=>document.getElementById('sosModal').classList.add('show');
+/** 把后端/本地的触达明细渲染成「逐人一行」的说明 */
+function renderPlan(el, items, emptyText){
+  if(!el) return;
+  if(!items || !items.length){
+    el.innerHTML = '<div class="pi bad"><span class="pn">无人收到通知</span>'
+                 + '<span class="pc">'+ecEsc(emptyText||'尚未配置紧急联系人')+'</span></div>';
+    return;
+  }
+  el.innerHTML = items.map(it=>{
+    const ok = it.delivered !== false;
+    const ch = (it.channel_labels && it.channel_labels.length)
+             ? it.channel_labels.join(' + ')
+             : ((it.channels||[]).map(ecChannelLabel).join(' + ') || '无可用渠道');
+    const right = ok
+      ? ch
+      : (ch + (it.note ? ' · ' + it.note : ' · 未能送达'));
+    return '<div class="pi'+(ok?'':' bad')+'">'
+         + '<span class="pn">'+ecEsc(it.name)
+         + '<span class="ec-role '+ecEsc(it.role||'family')+'" style="margin-left:6px">'
+         + ecEsc(it.role_label || ecRoleLabel(it.role))+'</span></span>'
+         + '<span class="pc">'+ecEsc(right)+'</span></div>';
+  }).join('');
+}
+
+document.getElementById('btnSos').onclick = ()=>{
+  // 打开确认框时先把「会通知到谁」摊开给人看，而不是只给一句笼统的「通知家属和社区」
+  const on = CONTACTS.filter(c=>c.enabled !== false);
+  const preview = on.map(c=>{
+    const chans = (c.channels && c.channels.length) ? c.channels : ecRoleDefaults(c.role||'family');
+    const hasAcc = !!(c.username || '');
+    const usable = chans.filter(ch=>EC_ACCOUNT_CHANNELS.indexOf(ch)<0 || hasAcc);
+    const phone = (c.phone||'').trim();
+    const reachable = phone ? usable : usable.filter(x=>x!=='sms'&&x!=='phone');
+    return {
+      name: c.name, role: c.role, role_label: ecRoleLabel(c.role),
+      delivered: !!(hasAcc || phone),
+      channel_labels: (reachable.length?reachable:chans).map(ecChannelLabel),
+      note: reachable.length ? '' : '无可用渠道'
+    };
+  });
+  renderPlan(document.getElementById('sosPlanPreview'), preview,
+             '尚未配置紧急联系人，呼救发出后无人会收到通知');
+  document.getElementById('sosModal').classList.add('show');
+};
 document.getElementById('sosCancel').onclick = ()=>document.getElementById('sosModal').classList.remove('show');
+document.getElementById('sosResClose').onclick = ()=>document.getElementById('sosResultModal').classList.remove('show');
 document.getElementById('sosConfirm').onclick = async ()=>{
   document.getElementById('sosModal').classList.remove('show');
-  const r = await fetch(API+'/api/sos/trigger',{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({location:'客厅'})
-  }).then(r=>r.json());
-  toast('SOS 已触发，已广播家属与社区','danger');
+  let r = {};
+  try{
+    r = await fetch(API+'/api/sos/trigger',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ elder_id: EID, location:'客厅' })
+    }).then(x=>x.json());
+  }catch(e){ r = {}; }
+  const items = r.notifications || [];
+  renderPlan(document.getElementById('sosResPlan'), items,
+             '尚未配置紧急联系人 —— 呼救已记录，但没有人会收到通知');
+  document.getElementById('sosResMsg').textContent =
+    r.message || (r.contacts_configured === false
+      ? '呼救已记录，但该老人尚未配置紧急联系人，无人收到通知。'
+      : '呼救已按联系人名单发出。');
+  document.getElementById('sosResultModal').classList.add('show');
+  toast(r.contacts_configured === false
+        ? 'SOS 已触发，但未配置紧急联系人，无人收到'
+        : ('SOS 已触发，已通知 '+(r.contacts_reachable||0)+'/'+(r.contacts_total||0)+' 位联系人'),
+        r.contacts_configured === false ? 'warn' : 'danger');
 };
 
 // ---- 问诊 ----
@@ -3124,7 +3863,20 @@ function updateRisk(r){
 // ---- 房间级电子围栏 ----
 let roomHistory = [];
 function updateRoom(st){
-  if(!st || !st.room) return;
+  if(!st) return;
+  if(notPaired(st)){
+    STATE.room = null;
+    roomHistory = [];
+    const nameEl = document.getElementById('roomName');
+    nameEl.textContent = NP; nameEl.style.color = '';
+    const dwellEl = document.getElementById('roomDwell');
+    dwellEl.textContent = '该住所尚未接入定位设备';
+    dwellEl.style.color = '';
+    document.getElementById('roomTrack').innerHTML = '<span class="rt-chip">未接入设备</span>';
+    renderFloorplan('', false);
+    return;
+  }
+  if(!st.room) return;
   STATE.room = st;
   const away = !!st.away;
   // 轨迹以后端为准（后端在离家时会追加「外出」，前端不再自行拼装，
@@ -3148,7 +3900,7 @@ function updateRoom(st){
   renderFloorplan(away ? '' : st.room, danger);
 }
 async function pollRoom(){
-  try{ updateRoom(await fetch(API+'/api/room/status').then(r=>r.json())); }catch(e){}
+  try{ updateRoom(await fetch(API+'/api/room/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 document.getElementById('btnBathroom').onclick = async ()=>{
   // 互斥前置校验：人已外出就不可能在卫生间久滞。
@@ -3185,7 +3937,22 @@ document.getElementById('btnBathroom').onclick = async ()=>{
 // ---- 毫米波雷达（非接触感知）----
 const POSTURE_CN = {standing:'站立', sitting:'坐姿', lying:'平躺', none:'未检出'};
 function updateRadar(f){
-  if(!f || !f.elder_id) return;
+  if(!f) return;
+  if(notPaired(f)){
+    document.getElementById('radarPresenceText').textContent = NP;
+    document.getElementById('radarInBed').textContent = NP;
+    document.getElementById('radarPosture').textContent = NP;
+    ['radarResp','radarHr','radarRoom','radarMotionTxt'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.textContent = '—';
+    });
+    document.getElementById('radarMotionBar').style.width = '0%';
+    const np = document.getElementById('radarPresent');
+    np.textContent = NP; np.className = 'pill';
+    const tag = document.getElementById('radarTag');
+    if(tag){ tag.textContent = '雷达：未接入设备'; tag.style.color = ''; }
+    return;
+  }
+  if(!f.elder_id) return;
   const pill = document.getElementById('radarPresent');
   pill.textContent = f.present ? '检出人体' : '无人';
   pill.className = 'pill ' + (f.present ? 'ok' : '');
@@ -3206,12 +3973,21 @@ function updateRadar(f){
   }
 }
 async function pollRadar(){
-  try{ updateRadar(await fetch(API+'/api/mmwave/status').then(r=>r.json())); }catch(e){}
+  try{ updateRadar(await fetch(API+'/api/mmwave/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 
 // ---- 环境传感器 ----
 function updateEnv(f){
-  if(!f || f.temperature===undefined) return;
+  if(!f) return;
+  if(notPaired(f)){
+    ['envTemp','envHum','envVapor','envIllu','envRoom'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.textContent = '—';
+    });
+    const np = document.getElementById('envScene');
+    np.textContent = NP; np.className = 'pill';
+    return;
+  }
+  if(f.temperature===undefined) return;
   document.getElementById('envTemp').textContent = f.temperature + ' °C';
   document.getElementById('envHum').textContent = f.humidity + ' %';
   const vp = document.getElementById('envVapor');
@@ -3224,7 +4000,7 @@ function updateEnv(f){
   p.className = 'pill ' + (f.scene==='night' ? 'warn' : '');
 }
 async function pollEnv(){
-  try{ updateEnv(await fetch(API+'/api/env/status').then(r=>r.json())); }catch(e){}
+  try{ updateEnv(await fetch(API+'/api/env/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
 }
 
 // ---- 多模态融合判定（来源格子按实际参与的信号动态渲染）----
@@ -3328,10 +4104,12 @@ async function init(){
   renderAlerts();
   // 拉取风险指数 + 房间状态 + 升级状态 + 融合/雷达/环境
   try{ updateRisk(await fetch(API+'/api/risk/'+EID).then(r=>r.json())); }catch(e){}
-  try{ updateFusion(await fetch(API+'/api/fusion/status').then(r=>r.json())); }catch(e){}
+  try{ updateFusion(await fetch(API+'/api/fusion/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json())); }catch(e){}
   pollRoom(); pollEscalation(); pollRadar(); pollEnv();
   pollSafety(); pollDoor(); pollAudio();
   loadAwayRules();
+  // 紧急联系人名单（SOS / 一级预警的收件人来源）—— 必须按当前老人拉取
+  await loadContacts();
   // 离线模式下数据是静态快照，高频轮询不会有新数据，反而浪费性能；
   // 仅保留必要的周期刷新（用户点击演示按钮后仍会主动刷新）。
   if(!OFFLINE.active){
@@ -3354,6 +4132,27 @@ async function init(){
 
 // ---- WebSocket ----
 let socket = null;
+
+/** 实时推送的按老人过滤 —— 每个监听都必须包这一层。
+ *
+ * 后端的 `socketio.emit(...)` 是**广播**：它把演示老人那套设备产生的实时帧
+ * （门磁 / 燃气 / 雷达 / 环境 / 声学 / 融合 / 姿态）推给**所有**在线客户端。
+ * 不过滤的话，新登录的账号会实时看到李奶奶家的读数 ——
+ * 这比「轮询漏传 elder_id」更隐蔽：刷新页面也甩不掉，因为它是推过来的。
+ *
+ * 放行规则：
+ *   1. 帧里带 elder_id → 必须等于当前会话的 EID；
+ *   2. 帧里没带 elder_id（例如融合结果）→ 只有当前会话本身就是演示老人时
+ *      才放行，因为这类帧必然是演示老人那套设备算出来的。
+ */
+function guardElder(handler){
+  return function(d){
+    const fid = d && d.elder_id;
+    if(fid != null) return String(fid) === String(EID) ? handler(d) : undefined;
+    return String(EID) === String(DEMO_ELDER_ID) ? handler(d) : undefined;
+  };
+}
+
 function connectSocket(){
   if(typeof io==='undefined'){
     document.getElementById('wsDot').classList.add('off');
@@ -3369,24 +4168,30 @@ function connectSocket(){
     document.getElementById('wsDot').classList.add('off');
     document.getElementById('wsStatus').textContent = '已断开';
   });
-  socket.on('health_update', updateMetrics);
-  socket.on('alert', d=>addAlert(d));
-  socket.on('sos', d=>addAlert({level:'SOS',message:d.message,ts:d.timestamp,status:'open'}));
-  socket.on('reminder', d=>{
+  // 全部监听经 guardElder 过滤，避免新账号被广播串入演示老人的数据
+  socket.on('health_update', guardElder(updateMetrics));
+  socket.on('alert', guardElder(d=>addAlert(d)));
+  socket.on('sos', guardElder(d=>{
+    // 把触达计划一起带进告警条目，列表里就能显示「实际通知到了谁」
+    addAlert({level:'SOS', message:d.message, ts:d.timestamp, status:'open',
+              contact_plan:{has_contacts:d.has_contacts,
+                            items:d.notifications||[]}});
+  }));
+  socket.on('reminder', guardElder(d=>{
     toast('提醒：'+d.message,'warn');
     loadReminders();
-  });
-  socket.on('posture_update', d=>{
+  }));
+  socket.on('posture_update', guardElder(d=>{
     document.getElementById('sceneTag').textContent = '姿态：'+d.posture+(d.fall?'（跌倒！）':'');
-  });
-  socket.on('risk_update', updateRisk);
-  socket.on('radar_update', updateRadar);
-  socket.on('env_update', updateEnv);
-  socket.on('fusion_update', updateFusion);
-  socket.on('safety_update', updateSafety);
-  socket.on('door_update', updateDoor);
-  socket.on('audio_update', updateAudio);
-  socket.on('escalation_update', d=>{
+  }));
+  socket.on('risk_update', guardElder(updateRisk));
+  socket.on('radar_update', guardElder(updateRadar));
+  socket.on('env_update', guardElder(updateEnv));
+  socket.on('fusion_update', guardElder(updateFusion));
+  socket.on('safety_update', guardElder(updateSafety));
+  socket.on('door_update', guardElder(updateDoor));
+  socket.on('audio_update', guardElder(updateAudio));
+  socket.on('escalation_update', guardElder(d=>{
     if(d.type==='escalated'){
       delete escMap[d.alert_id];
       addAlert({level:'L1', category:'fall_no_response', message:d.message,
@@ -3396,7 +4201,7 @@ function connectSocket(){
       if(d.type==='cancelled') toast('老人跌倒已有人响应，升级处置已取消','info');
     }
     renderAlerts();
-  });
+  }));
 }
 
 // 轮询兜底（无 SocketIO 时）
@@ -3412,11 +4217,11 @@ function startPolling(){
         newOnes.forEach(addAlert);
       }
       updateRisk(await fetch(API+'/api/risk/'+EID).then(r=>r.json()));
-      updateRadar(await fetch(API+'/api/mmwave/status').then(r=>r.json()));
-      updateEnv(await fetch(API+'/api/env/status').then(r=>r.json()));
-      updateSafety(await fetch(API+'/api/safety/status').then(r=>r.json()));
-      updateDoor(await fetch(API+'/api/door/status').then(r=>r.json()));
-      updateAudio(await fetch(API+'/api/audio/status').then(r=>r.json()));
+      updateRadar(await fetch(API+'/api/mmwave/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json()));
+      updateEnv(await fetch(API+'/api/env/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json()));
+      updateSafety(await fetch(API+'/api/safety/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json()));
+      updateDoor(await fetch(API+'/api/door/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json()));
+      updateAudio(await fetch(API+'/api/audio/status?elder_id='+encodeURIComponent(EID)).then(r=>r.json()));
     }catch(e){}
   }, 3000);
 }
@@ -3943,7 +4748,7 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
         db[elderId] = { elder_id: elderId, name: name, age: age,
                         gender: neGender, address: addr,
                         chronic_diseases: chronic,
-                        medications: [], families: [],
+                        medications: [], contacts: [],
                         _local: true };
         saveLocalElders(db);
       }
@@ -3955,10 +4760,15 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
         try{
           var token = '';
           try{ token = (SESSION || {}).token || ''; }catch(e3){ token = ''; }
+          // 令牌只放 X-Auth-Token，**不要**放 Authorization：
+          // 托管平台会给每个请求注入它自己的 Authorization JWT
+          // （用于识别站点访问者），我们放进去的值会被它覆盖掉，
+          // 于是后端拿到的是平台的 JWT、查不到会话 →
+          // 表现为「刚注册就提示登录失效」。自定义头不受影响。
           var rb = await fetch(API + '/api/auth/bind_elder', {
             method:'POST',
             headers:{ 'Content-Type':'application/json',
-                      'Authorization': 'Bearer ' + token },
+                      'X-Auth-Token': token },
             body: JSON.stringify({ elder_id: elderId })
           });
           var rbj = await rb.json();
@@ -4026,8 +4836,20 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     if(typeof window.__bootForSession === 'function') window.__bootForSession();
   }
 
-  /** 登出：清会话与界面状态，回到登录页 */
+  /** 登出：吊销服务端令牌 + 清会话与界面状态，回到登录页 */
   function logout(){
+    // 先让服务端把令牌作废（否则它要一直有效到过期，手机借人就还能登）。
+    // fire-and-forget：网络失败也不该卡住登出。
+    try{
+      var tk = (SESSION && SESSION.token) || '';
+      if(tk){
+        fetch(API + '/api/auth/logout', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'X-Auth-Token': tk },
+          keepalive:true
+        }).catch(function(){});
+      }
+    }catch(e){}
     writeSession(null);
     if(typeof window.__hideNoElder === 'function') window.__hideNoElder();
     if(typeof window.__closeBand === 'function') window.__closeBand();
@@ -4545,12 +5367,20 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   // 手环端按钮
   var bandSos = document.getElementById('bandSos');
   if(bandSos) bandSos.onclick = function(){
-    if(confirm('确认拨打紧急呼救？将同时通知家属与社区。')){
+    if(confirm('确认拨打紧急呼救？将按紧急联系人名单依次通知。')){
       fetch(API + '/api/sos/trigger', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({location:'手环端触发'})
-      }).catch(function(){}).finally(function(){
-        if(typeof toast === 'function') toast('SOS 已发出，家属与社区已收到通知','danger');
+        body: JSON.stringify({ elder_id: EID, location:'手环端触发' })
+      }).then(function(r){ return r.json(); }).then(function(j){
+        if(typeof toast !== 'function') return;
+        if(j && j.contacts_configured === false){
+          toast('SOS 已发出，但尚未配置紧急联系人，无人收到通知','warn');
+        }else{
+          toast('SOS 已发出，已通知 ' + (j.contacts_reachable || 0) + '/'
+                + (j.contacts_total || 0) + ' 位紧急联系人','danger');
+        }
+      }).catch(function(){
+        if(typeof toast === 'function') toast('SOS 已发出','danger');
       });
     }
   };
