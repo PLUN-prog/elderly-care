@@ -4238,7 +4238,7 @@ function startPolling(){
 // 正确做法：记录**已为哪个老人启动过**（__bootedEid），按会话切换重新启动。
 var __bootedEid = null;
 function bootForSession(){
-  // 优先用界面层维护的 __session；若尚未就绪则直接读 sessionStorage，
+  // 优先用界面层维护的 __session；若尚未就绪则直接读 localStorage，
   // 避免因脚本执行顺序问题拿到 null 而误判为「未绑定」。
   let user = null;
   try{
@@ -4246,7 +4246,7 @@ function bootForSession(){
       user = (window.__session() || {}).user || null;
     }
     if(!user){
-      const raw = sessionStorage.getItem('wb-session');
+      const raw = localStorage.getItem('wb-session');
       if(raw) user = (JSON.parse(raw) || {}).user || null;
     }
   }catch(e){ user = null; }
@@ -4531,14 +4531,17 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   window.__session = function(){ return SESSION; };
 
   function readSession(){
-    try{ return JSON.parse(sessionStorage.getItem(SESS_KEY) || 'null'); }
+    // 登录态放 localStorage 而非 sessionStorage：
+    // sessionStorage 关标签页/浏览器即清空，用户「每次进来都要重新登录、重新填」。
+    // localStorage 持久化后，刷新、关浏览器、甚至换设备（同一浏览器账号）都在。
+    try{ return JSON.parse(localStorage.getItem(SESS_KEY) || 'null'); }
     catch(e){ return null; }
   }
   function writeSession(s){
     SESSION = s;
     try{
-      if(s) sessionStorage.setItem(SESS_KEY, JSON.stringify(s));
-      else  sessionStorage.removeItem(SESS_KEY);
+      if(s) localStorage.setItem(SESS_KEY, JSON.stringify(s));
+      else  localStorage.removeItem(SESS_KEY);
     }catch(e){}
   }
 
@@ -5286,17 +5289,8 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     var pcEl = document.getElementById('bandRingPc');
     if(pcEl) pcEl.textContent = steps ? steps : '--';
 
-    // 家人留言（纯展示）
-    var msgs = [
-      {who:'女儿 李萍', tx:'妈，今天降温了，出门记得加件外套。'},
-      {who:'社区网格员', tx:'下午 3 点上门做例行探访，家里有人吗？'},
-      {who:'儿子 李强', tx:'药按时吃了吗？血压记得量一下。'}
-    ];
-    document.getElementById('bandMsgs').innerHTML = msgs.map(function(m){
-      return '<div class="wb-msg"><div class="av">' + m.who.slice(0,1) + '</div>' +
-             '<div class="bd"><div class="wh">' + m.who + '</div>' +
-             '<div class="tx">' + m.tx + '</div></div></div>';
-    }).join('');
+    // 家人留言 + 用药提醒：按当前监测对象的真实档案渲染（bandApplyProfile）
+    bandApplyProfile();
 
     // 心率迷你趋势：复用主图表数据
     var spark = document.getElementById('bandSpark');
@@ -5315,17 +5309,65 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
         .map(function(v){ return '<i style="height:' + v + '%"></i>'; }).join('');
     }
 
-    // 用药提醒
-    var meds = [
-      {nm:'氨氯地平片', tm:'08:00', st:'done'},
-      {nm:'阿司匹林肠溶片', tm:'12:30', st:'due'},
-      {nm:'二甲双胍', tm:'19:00', st:'wait'}
-    ];
-    document.getElementById('bandMeds').innerHTML = meds.map(function(m){
-      return '<div class="wb-med ' + m.st + '"><span class="dot"></span>' +
-             '<span class="nm">' + m.nm + '</span>' +
-             '<span class="tm">' + m.tm + '</span></div>';
-    }).join('');
+  }
+
+  /* 手环端「家人留言 / 用药提醒 / 呼叫家属」按当前监测对象的真实档案渲染。
+     演示老人 E001 保留预置叙事留言；其余老人显示自己配置的紧急联系人，
+     什么都没配就如实显示空状态 —— 绝不把李奶奶的家人安到别人头上。 */
+  var WB_PROFILE = null;    // 档案缓存 {__eid, __data}，切老人自动失效
+  function bandApplyProfile(){
+    var render = function(ep){
+      var contacts = ((ep && ep.contacts) || []).filter(function(c){
+        return c.enabled !== false; });
+      // —— 家人留言 ——
+      var msgs;
+      if(ep && ep.elder_id === DEMO_ELDER_ID){
+        msgs = [
+          {who:'女儿 李萍', tx:'妈，今天降温了，出门记得加件外套。'},
+          {who:'社区网格员', tx:'下午 3 点上门做例行探访，家里有人吗？'},
+          {who:'儿子 李强', tx:'药按时吃了吗？血压记得量一下。'}
+        ];
+      }else{
+        msgs = contacts.map(function(c){
+          return {who:((c.relation ? c.relation + ' ' : '') + (c.name || '')),
+                  tx:(c.phone || '')};
+        });
+      }
+      var box = document.getElementById('bandMsgs');
+      if(box) box.innerHTML = msgs.length ? msgs.map(function(m){
+        return '<div class="wb-msg"><div class="av">' + ecEsc(m.who.slice(0,1)) +
+               '</div><div class="bd"><div class="wh">' + ecEsc(m.who) +
+               '</div><div class="tx">' + ecEsc(m.tx) + '</div></div></div>';
+      }).join('') : '<div class="wb-msg"><div class="bd"><div class="wh">暂无留言</div>' +
+        '<div class="tx" style="opacity:.6">尚未配置紧急联系人：到「照护服务」页添加后，' +
+        '这里会显示他们，SOS 也将按名单逐人通知。</div></div></div>';
+      // —— 用药提醒 ——
+      var meds = ((ep && ep.medications) || []).map(function(m, i){
+        if(typeof m === 'string') m = {name:m};
+        return {nm:(m.name || ''), tm:(m.schedule || ''),
+                st:(i === 0 ? 'done' : (i === 1 ? 'due' : 'wait'))};
+      }).filter(function(m){ return m.nm; });
+      var mbox = document.getElementById('bandMeds');
+      if(mbox) mbox.innerHTML = meds.length ? meds.map(function(m){
+        return '<div class="wb-med ' + m.st + '"><span class="dot"></span>' +
+               '<span class="nm">' + ecEsc(m.nm) + '</span>' +
+               '<span class="tm">' + ecEsc(m.tm) + '</span></div>';
+      }).join('') : '<div class="wb-med"><span class="dot"></span>' +
+        '<span class="nm" style="opacity:.6">该档案暂无用药记录</span></div>';
+    };
+    // 每次打开手环都重新拉档案：刚在「照护服务」页配完联系人，翻回手环就要能看到
+    fetch(API + '/api/elderly/' + encodeURIComponent(EID))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(ep){
+        if(ep && !ep.error){
+          WB_PROFILE = {__eid:EID, __data:ep};
+          render(ep);
+        }else{
+          WB_PROFILE = {__eid:EID, __data:null};
+          render(null);
+        }
+      })
+      .catch(function(){ render(null); });
   }
 
   function openBand(){
@@ -5386,7 +5428,16 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   };
   var bandCall = document.getElementById('bandCall');
   if(bandCall) bandCall.onclick = function(){
-    if(typeof toast === 'function') toast('正在呼叫家属：女儿 李萍…','info');
+    var contacts = ((WB_PROFILE && WB_PROFILE.__data && WB_PROFILE.__data.contacts) || [])
+      .filter(function(c){ return c.enabled !== false; });
+    if(!contacts.length){
+      if(typeof toast === 'function')
+        toast('尚未配置紧急联系人，请到「照护服务」页添加','warn');
+      return;
+    }
+    var c0 = contacts[0];
+    var who = (c0.relation ? c0.relation + ' ' : '') + (c0.name || '家属');
+    if(typeof toast === 'function') toast('正在呼叫家属：' + who + '…','info');
   };
   var bandAck = document.getElementById('bandAck');
   if(bandAck) bandAck.onclick = function(){
