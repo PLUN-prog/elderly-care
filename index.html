@@ -784,10 +784,12 @@ input::placeholder{color:var(--text-3)}
 
 /* 忘记密码链接 */
 .login-forgot{
-  display:block;text-align:right;margin-top:10px;font-size:12px;
-  color:var(--accent);cursor:pointer;text-decoration:none;
+  display:block;width:100%;text-align:right;margin-top:12px;font-size:12px;
+  color:var(--accent);cursor:pointer;background:none;border:none;padding:4px 0;
+  font-family:inherit;line-height:1.5;
 }
 .login-forgot:hover{text-decoration:underline}
+.login-forgot:active{opacity:.7}
 
 /* 忘记密码弹窗 */
 .fp-mask{
@@ -1202,7 +1204,7 @@ input::placeholder{color:var(--text-3)}
       </div>
       <button class="login-btn" type="submit" id="loginBtn">登 录</button>
       <div class="login-err" id="loginErr"></div>
-      <a class="login-forgot" id="forgotLink" href="javascript:void(0)">忘记密码？</a>
+      <button class="login-forgot" id="forgotLink" type="button">忘记密码？</button>
     </form>
 
     <!-- 注册 -->
@@ -4916,6 +4918,10 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   function enterApp(user, token){
     writeSession({ user: user || { username: DEMO_USER }, token: token || '' });
     loginEl.classList.add('hide');
+    // 防御：登录成功后强制关闭「忘记密码」弹窗（若开着）。
+    // 遮罩只挡鼠标挡不住键盘 Enter，不关的话它会跟着漂进看板。
+    var fpm = document.getElementById('fpMask');
+    if(fpm) fpm.style.display = 'none';
     // 老人身份登录 → 直接进手环端（那是老人自己的界面）
     if(user && user.role === 'elder' && typeof window.__openBand === 'function'){
       window.__openBand();
@@ -4940,6 +4946,9 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
       }
     }catch(e){}
     writeSession(null);
+    // 防御：回登录页时强制关闭「忘记密码」弹窗（若开着）
+    var fpm = document.getElementById('fpMask');
+    if(fpm) fpm.style.display = 'none';
     if(typeof window.__hideNoElder === 'function') window.__hideNoElder();
     if(typeof window.__closeBand === 'function') window.__closeBand();
     // 复位启动标记：下次以别的账号登录时能重新加载对应的老人数据
@@ -5212,6 +5221,10 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     document.getElementById('fpPass2').value = '';
     fpMask.style.display = 'flex';
     fpLoadCaptcha();
+    // 焦点移进弹窗：否则焦点仍留在登录表单的密码框里，用户按 Enter 会
+    // 「穿过遮罩」直接提交登录 —— 登录成功进了看板，弹窗却还开着，
+    // 看起来就像「登录后自己弹出忘记密码」
+    try{ fpUser.focus(); }catch(e){}
   };
   document.getElementById('fpCancel').onclick = function(){
     fpMask.style.display = 'none';
