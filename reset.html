@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>重置密码 · 居家智能医养监护系统</title>
+<style>
+  :root{--accent:#0d6efd;--accent-soft:rgba(13,110,253,.12);--danger:#e5484d;--danger-bg:rgba(229,72,77,.12);--ok:#18a058;--ok-bg:rgba(24,160,88,.12)}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+       background:#0f172a;color:#e8eefc;min-height:100vh;
+       display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{width:100%;max-width:380px;background:#131c2e;border:1px solid rgba(255,255,255,.08);
+        border-radius:16px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .head{text-align:center;margin-bottom:24px}
+  .head h1{font-size:20px;margin:0 0 6px;font-weight:600}
+  .head p{font-size:13px;color:#8b99b4;margin:0}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;color:#b6c2d8;margin-bottom:6px}
+  .field input{width:100%;padding:11px 13px;border:1px solid rgba(255,255,255,.12);border-radius:10px;
+               background:#0b1322;color:#e8eefc;font-size:14px;outline:none;font-family:inherit;
+               transition:border-color .16s}
+  .field input:focus{border-color:var(--accent)}
+  .cap{display:flex;align-items:center;gap:10px}
+  .cap .cq{flex:0 0 auto;min-width:82px;padding:10px 12px;border-radius:10px;background:#0b1322;
+           border:1px solid rgba(255,255,255,.12);font-size:15px;font-weight:600;color:#e8eefc;
+           font-family:ui-monospace,Menlo,monospace;text-align:center;cursor:pointer;user-select:none}
+  .cap input{flex:1;min-width:0}
+  .btn{width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;
+       font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .16s}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:#b6c2d8;border:1px solid rgba(255,255,255,.12)}
+  .msg{display:none;margin-top:14px;padding:10px 13px;border-radius:10px;font-size:13px;line-height:1.5}
+  .msg.err{display:block;background:var(--danger-bg);color:var(--danger)}
+  .msg.ok{display:block;background:var(--ok-bg);color:var(--ok)}
+  .back{display:block;text-align:center;margin-top:18px;font-size:13px;color:#8b99b4;text-decoration:none}
+  .back:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <h1>重置密码</h1>
+    <p>输入账号和新密码，重置后即可用新密码登录</p>
+  </div>
+
+  <div class="field">
+    <label for="u">账号</label>
+    <input id="u" type="text" placeholder="输入要找回的账号" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="p1">新密码</label>
+    <input id="p1" type="password" placeholder="至少 6 位" autocomplete="new-password">
+  </div>
+  <div class="field">
+    <label for="p2">确认新密码</label>
+    <input id="p2" type="password" placeholder="请再次输入" autocomplete="new-password">
+  </div>
+  <div class="field">
+    <label for="cap">验证码（点算式可刷新）</label>
+    <div class="cap">
+      <span class="cq" id="cq">加载中…</span>
+      <input id="cap" type="text" inputmode="numeric" placeholder="算式的答案">
+    </div>
+  </div>
+
+  <button class="btn" id="btn">重置密码</button>
+  <div class="msg" id="msg"></div>
+  <a class="back" href="index.html">← 返回登录</a>
+</div>
+
+<script>
+window.__API_BASE__ = "https://elderly-care-monitor.app.workbuddy.host";   // 由构建脚本注入线上后端地址
+(function(){
+  var API = '';
+  // 后端地址：与主页面一致，线上由构建脚本注入 __API_BASE__，本地同源
+  try{
+    if(window.__API_BASE__) API = String(window.__API_BASE__).replace(/\/+$/,'');
+  }catch(e){}
+  if(!API){ API = location.origin; }
+
+  var captchaId = '';
+  var cq = document.getElementById('cq');
+  var capInput = document.getElementById('cap');
+  var btn = document.getElementById('btn');
+  var msg = document.getElementById('msg');
+
+  function show(t, type){
+    msg.textContent = t;
+    msg.className = 'msg ' + (type || 'err');
+  }
+  function hide(){ msg.className = 'msg'; }
+
+  function loadCaptcha(){
+    cq.textContent = '加载中…';
+    capInput.value = '';
+    fetch(API + '/api/auth/captcha')
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){ captchaId = j.captcha_id; cq.textContent = j.question; }
+        else { cq.textContent = '获取失败'; show('无法连接后端，请确认服务已启动','err'); }
+      })
+      .catch(function(){ cq.textContent = '获取失败'; show('无法连接后端，请确认服务已启动','err'); });
+  }
+  cq.onclick = loadCaptcha;
+
+  btn.onclick = function(){
+    hide();
+    var u = document.getElementById('u').value.trim();
+    var p1 = document.getElementById('p1').value;
+    var p2 = document.getElementById('p2').value;
+    var cap = capInput.value.trim();
+    if(!u){ show('请输入账号','err'); return; }
+    if(p1.length < 6){ show('新密码至少 6 位','err'); return; }
+    if(p1 !== p2){ show('两次输入的密码不一致','err'); return; }
+    if(!cap){ show('请输入验证码答案','err'); return; }
+
+    btn.disabled = true; btn.textContent = '重置中…';
+    fetch(API + '/api/auth/reset_password', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username:u, new_password:p1, confirm:p2,
+                             captcha_id:captchaId, captcha:cap })
+    }).then(function(r){ return r.json(); })
+      .then(function(res){
+        btn.disabled = false; btn.textContent = '重置密码';
+        if(res && res.ok){
+          show('密码已重置，请返回登录页用新密码登录','ok');
+          document.getElementById('u').value = '';
+          document.getElementById('p1').value = '';
+          document.getElementById('p2').value = '';
+          loadCaptcha();
+        }else{
+          show((res && res.error) || '重置失败，请重试','err');
+          if(res && res.error && res.error.indexOf('验证码') >= 0) loadCaptcha();
+        }
+      })
+      .catch(function(){
+        btn.disabled = false; btn.textContent = '重置密码';
+        show('网络异常，请稍后重试','err');
+      });
+  };
+
+  loadCaptcha();
+})();
+</script>
+</body>
+</html>
