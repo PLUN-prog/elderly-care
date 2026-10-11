@@ -782,6 +782,41 @@ input::placeholder{color:var(--text-3)}
 .login-tip .lk{color:var(--accent);cursor:pointer;text-decoration:underline;
   text-underline-offset:2px}
 
+/* 忘记密码链接 */
+.login-forgot{
+  display:block;text-align:right;margin-top:10px;font-size:12px;
+  color:var(--accent);cursor:pointer;text-decoration:none;
+}
+.login-forgot:hover{text-decoration:underline}
+
+/* 忘记密码弹窗 */
+.fp-mask{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.fp-card{
+  width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.25);
+}
+.fp-head{
+  font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text-1);
+}
+.fp-actions{display:flex;gap:10px;margin-top:16px}
+.fp-btn{
+  flex:1;padding:10px;border-radius:9px;border:1px solid var(--border);
+  background:var(--accent);color:#fff;font-size:14px;cursor:pointer;font-weight:500;
+}
+.fp-btn.ghost{background:transparent;color:var(--text-2)}
+.fp-captcha{display:flex;align-items:center;gap:10px}
+.fp-cq{
+  flex:0 0 auto;min-width:74px;padding:8px 12px;border-radius:8px;
+  background:var(--surface-2);border:1px solid var(--border);
+  font-size:15px;font-weight:600;color:var(--text-1);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.5px;text-align:center;user-select:none;
+}
+.fp-captcha input{flex:1;min-width:0}
+
 /* ============================================================
    手环端（老人视角）—— 参考小米手环的卡片式小方屏
    ------------------------------------------------------------
@@ -1167,6 +1202,7 @@ input::placeholder{color:var(--text-3)}
       </div>
       <button class="login-btn" type="submit" id="loginBtn">登 录</button>
       <div class="login-err" id="loginErr"></div>
+      <a class="login-forgot" id="forgotLink" href="javascript:void(0)">忘记密码？</a>
     </form>
 
     <!-- 注册 -->
@@ -1209,6 +1245,40 @@ input::placeholder{color:var(--text-3)}
       <b>演示账号</b>：<code>demo</code> / <code>123456</code><br>
       也可以 <span class="lk" id="tipToReg">注册一个新账号</span>——密码经 PBKDF2 加盐哈希后存库，不保存明文。
     </div>
+  </div>
+</div>
+
+<!-- 忘记密码弹窗 -->
+<div class="fp-mask" id="fpMask" style="display:none">
+  <div class="fp-card">
+    <div class="fp-head">重置密码</div>
+    <form id="fpForm" autocomplete="off">
+      <div class="login-field">
+        <label for="fpUser">账号</label>
+        <input id="fpUser" type="text" placeholder="输入要找回的账号" spellcheck="false">
+      </div>
+      <div class="login-field">
+        <label for="fpPass">新密码</label>
+        <input id="fpPass" type="password" placeholder="至少 6 位">
+      </div>
+      <div class="login-field">
+        <label for="fpPass2">确认新密码</label>
+        <input id="fpPass2" type="password" placeholder="请再次输入">
+      </div>
+      <div class="login-field">
+        <label for="fpCaptcha">验证码</label>
+        <div class="fp-captcha">
+          <span class="fp-cq" id="fpQuestion">加载中…</span>
+          <input id="fpCaptcha" type="text" inputmode="numeric" placeholder="算式的答案" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+      <div class="fp-actions">
+        <button class="fp-btn ghost" id="fpCancel" type="button">取消</button>
+        <button class="fp-btn" type="submit" id="fpSubmit">重置密码</button>
+      </div>
+      <div class="login-err" id="fpErr"></div>
+      <div class="login-ok" id="fpOk"></div>
+    </form>
   </div>
 </div>
 
@@ -1572,14 +1642,21 @@ input::placeholder{color:var(--text-3)}
         </div>
         <div class="st">v1.3 · 本地模拟器</div>
       </div>
-      <button class="tbtn" id="themeBtn" title="切换明暗主题">
-        <svg class="ic-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.4 14.2A8.6 8.6 0 0 1 9.8 3.6a8.6 8.6 0 1 0 10.6 10.6z"/>
-        </svg>
-        <svg class="ic-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>
-        </svg>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="tbtn" id="themeBtn" title="切换明暗主题">
+          <svg class="ic-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.4 14.2A8.6 8.6 0 0 1 9.8 3.6a8.6 8.6 0 1 0 10.6 10.6z"/>
+          </svg>
+          <svg class="ic-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>
+          </svg>
+        </button>
+        <button class="tbtn" id="logoutBtn" title="退出登录" style="width:auto;padding:0 10px;font-size:12px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px">
+            <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/>
+          </svg>退出
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -4312,6 +4389,15 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     };
   }
 
+  // 看板侧边栏「退出登录」：复用 logout()（吊销令牌 + 清会话 + 回登录页）。
+  // logout 定义在另一个 IIFE 作用域，通过 window.__logout 暴露，故这里用它。
+  var logoutBtn = document.getElementById('logoutBtn');
+  if(logoutBtn){
+    logoutBtn.onclick = function(){
+      if(typeof window.__logout === 'function') window.__logout();
+    };
+  }
+
   // ---- 分页导航 ----
   var navItems = document.querySelectorAll('.nitem');
   var pages = document.querySelectorAll('.page');
@@ -5086,6 +5172,93 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
       showError(errEl, '登录异常：' + e.message);
     }finally{
       btn.disabled = false; btn.textContent = '登 录';
+    }
+  });
+
+  // ---------- 忘记密码 ----------
+  var fpMask = document.getElementById('fpMask');
+  var fpForm = document.getElementById('fpForm');
+  var fpUser = document.getElementById('fpUser');
+  var fpErr  = document.getElementById('fpErr');
+  var fpOk   = document.getElementById('fpOk');
+  var fpCaptchaId = '';   // 当前验证码的 id（提交时回传）
+
+  // 拉取一道新的算术验证码
+  function fpLoadCaptcha(){
+    var qEl = document.getElementById('fpQuestion');
+    qEl.textContent = '加载中…';
+    document.getElementById('fpCaptcha').value = '';
+    fetch(API + '/api/auth/captcha')
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok){
+          fpCaptchaId = j.captcha_id;
+          qEl.textContent = j.question;
+        }else{
+          qEl.textContent = '获取失败';
+        }
+      })
+      .catch(function(){
+        qEl.textContent = '获取失败';
+      });
+  }
+  // 点验证码算式可刷新
+  document.getElementById('fpQuestion').onclick = fpLoadCaptcha;
+
+  document.getElementById('forgotLink').onclick = function(){
+    hideTip(fpErr); hideTip(fpOk);
+    fpUser.value = '';
+    document.getElementById('fpPass').value = '';
+    document.getElementById('fpPass2').value = '';
+    fpMask.style.display = 'flex';
+    fpLoadCaptcha();
+  };
+  document.getElementById('fpCancel').onclick = function(){
+    fpMask.style.display = 'none';
+  };
+  // 点遮罩空白处关闭
+  fpMask.addEventListener('click', function(ev){
+    if(ev.target === fpMask) fpMask.style.display = 'none';
+  });
+  fpForm.addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    hideTip(fpErr); hideTip(fpOk);
+    var u  = (fpUser.value || '').trim();
+    var p  = document.getElementById('fpPass').value || '';
+    var p2 = document.getElementById('fpPass2').value || '';
+    var cap = document.getElementById('fpCaptcha').value.trim();
+    if(!u){ showError(fpErr, '请输入账号'); return; }
+    if(p.length < 6){ showError(fpErr, '新密码至少 6 位'); return; }
+    if(p !== p2){ showError(fpErr, '两次输入的密码不一致'); return; }
+    if(!cap){ showError(fpErr, '请输入验证码答案'); return; }
+
+    var btn = document.getElementById('fpSubmit');
+    btn.disabled = true; btn.textContent = '重置中…';
+    try{
+      var r = await fetch(API + '/api/auth/reset_password', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: u, new_password: p, confirm: p2,
+                               captcha_id: fpCaptchaId, captcha: cap })
+      });
+      var res = await r.json();
+      if(r.ok && res.ok){
+        // 不泄露「账号是否存在」：无论有无都提示成功，但措辞说明
+        hideTip(fpErr);
+        fpOk.textContent = '密码已重置，请用新密码登录';
+        fpOk.classList.add('show');
+        // 回填到登录框，方便直接登录
+        document.getElementById('loginUser').value = u;
+        document.getElementById('loginPass').value = '';
+        setTimeout(function(){ fpMask.style.display = 'none'; }, 1200);
+      }else{
+        showError(fpErr, (res && res.error) || '重置失败，请重试');
+        // 验证码答错/过期后自动刷新一道，方便重试
+        if(res && res.error && res.error.indexOf('验证码') >= 0) fpLoadCaptcha();
+      }
+    }catch(e){
+      showError(fpErr, '重置异常：' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = '重置密码';
     }
   });
 
