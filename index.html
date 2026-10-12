@@ -2350,7 +2350,7 @@ input::placeholder{color:var(--text-3)}
 
     <!-- ========== 页 7：老人档案 ==========
          集中展示当前账号绑定的监测对象：基本信息 / 慢病 / 用药 / 紧急联系人，
-         并支持就地编辑与「更换监测对象」。 -->
+         并支持就地编辑资料。 -->
     <section class="page" id="page-profile">
       <div class="phead">
         <div>
@@ -2447,19 +2447,6 @@ input::placeholder{color:var(--text-3)}
         </div>
         <div class="login-err" id="pfErr"></div>
       </form>
-
-      <!-- 更换监测对象 -->
-      <div class="card" style="margin-top:14px">
-        <div class="card-h">
-          <div class="ct">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4.6 8.4h11.2l-2.6-2.6M19.4 15.6H8.2l2.6 2.6"/>
-            </svg>更换监测对象
-          </div>
-          <span class="cm" id="pfSwitchHint">当前账号绑定的监测对象不对？在下方选择要切换的档案</span>
-        </div>
-        <div class="pf-list" id="pfElderList"><div class="empty">加载中…</div></div>
-      </div>
     </section>
 
     <!-- ========== 页 8：演示控制台 ========== -->
@@ -4802,41 +4789,11 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     setv('pfGender', d.gender === 'male' ? 'male' : 'female');
     setv('pfAddr', d.address || '');
     setv('pfChronicIn', ch.join(','));
-
-    loadElderOptions();
   }
 
-  async function loadElderOptions(){
-    const box = document.getElementById('pfElderList');
-    if(!box) return;
-    const cur = pfEid();
-    let list = [];
-    try{
-      const j = await fetch(API + '/api/elderly/').then(function(r){ return r.json(); });
-      list = Array.isArray(j.data) ? j.data : [];
-    }catch(e){ list = []; }
-    if(!list.length){
-      box.innerHTML = '<div class="empty">未获取到档案列表（离线演示模式下不可用）</div>';
-      return;
-    }
-    box.innerHTML = list.map(function(it){
-      const on = it.elder_id === cur;
-      // 演示档案加标注：否则建完新档案后，用户很容易顺手绑到「李奶奶」上
-      const isDemo = it.elder_id === (window.DEMO_ELDER_ID || 'E001');
-      return '<div class="pf-elder' + (on ? ' on' : '') + '">'
-           +   '<div style="min-width:0"><div class="nm">' + pfEsc(it.name || '未命名')
-           +     '<span class="sub" style="margin-left:6px">' + pfEsc(it.elder_id) + '</span></div>'
-           +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填')
-           +     (on ? ' · 当前绑定' : '') + (isDemo ? ' · 演示数据' : '') + '</div></div>'
-           +   (on ? '<button class="pf-go" disabled>已绑定</button>'
-                  : '<button class="pf-go" data-bind="' + pfEsc(it.elder_id) + '">切换到此人</button>')
-           + '</div>';
-    }).join('');
-    box.querySelectorAll('[data-bind]').forEach(function(b){
-      b.onclick = function(){ switchElder(b.getAttribute('data-bind')); };
-    });
-  }
-
+  /** 档案页不再提供「更换监测对象」（演示时不暴露切换入口）。
+   *  换绑能力保留在**空状态页**（账号确实未绑定时才出现），
+   *  否则账号一旦被解绑就再也没有恢复入口了。 */
   async function switchElder(eid){
     const sess = (typeof window.__session === 'function' ? window.__session() : null) || {};
     const token = sess.token || '';
