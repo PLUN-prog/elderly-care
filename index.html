@@ -4821,11 +4821,13 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     }
     box.innerHTML = list.map(function(it){
       const on = it.elder_id === cur;
+      // 演示档案加标注：否则建完新档案后，用户很容易顺手绑到「李奶奶」上
+      const isDemo = it.elder_id === (window.DEMO_ELDER_ID || 'E001');
       return '<div class="pf-elder' + (on ? ' on' : '') + '">'
            +   '<div style="min-width:0"><div class="nm">' + pfEsc(it.name || '未命名')
            +     '<span class="sub" style="margin-left:6px">' + pfEsc(it.elder_id) + '</span></div>'
            +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填')
-           +     (on ? ' · 当前绑定' : '') + '</div></div>'
+           +     (on ? ' · 当前绑定' : '') + (isDemo ? ' · 演示数据' : '') + '</div></div>'
            +   (on ? '<button class="pf-go" disabled>已绑定</button>'
                   : '<button class="pf-go" data-bind="' + pfEsc(it.elder_id) + '">切换到此人</button>')
            + '</div>';
@@ -5260,10 +5262,12 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     }catch(e){ items = []; }
     if(!items.length){ box.style.display = 'none'; return; }
     list.innerHTML = items.map(function(it){
+      const isDemo = it.elder_id === (window.DEMO_ELDER_ID || 'E001');
       return '<div class="pf-elder">'
            +   '<div style="min-width:0"><div class="nm">' + esc(it.name || '未命名')
            +     '<span class="sub" style="margin-left:6px">' + esc(it.elder_id) + '</span></div>'
-           +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填') + '</div></div>'
+           +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填')
+           +     (isDemo ? ' · 演示数据' : '') + '</div></div>'
            +   '<button class="pf-go" data-bind="' + esc(it.elder_id) + '">绑定</button>'
            + '</div>';
     }).join('');
