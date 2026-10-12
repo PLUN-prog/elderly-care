@@ -65,6 +65,34 @@
   --nav-active:rgba(3,105,161,.07);
   --sos-a:#ef4444; --sos-b:#b91c1c;
 }
+/* 暖阳：米白底 + 暖橙点缀 */
+:root[data-theme="warm"]{
+  --bg:#fdf6ec; --bg-elev:#fffaf3; --surface:#ffffff; --surface-2:#fdf3e7;
+  --border:rgba(120,72,20,.12); --border-strong:rgba(120,72,20,.22);
+  --text:#3b2a17; --text-2:#8a6b4a; --text-3:#b09472;
+  --accent:#c2610a; --accent-soft:rgba(194,97,10,.1); --accent-line:rgba(194,97,10,.3);
+  --ok:#15803d; --warn:#b45309; --danger:#b91c1c; --info:#7c3aed;
+  --ok-bg:rgba(21,128,61,.09); --warn-bg:rgba(180,83,9,.1); --danger-bg:rgba(185,28,28,.08);
+  --grid:rgba(120,72,20,.07);
+  --track:rgba(120,72,20,.11);
+  --shadow:0 1px 2px rgba(120,72,20,.06), 0 8px 24px rgba(120,72,20,.09);
+  --nav-active:rgba(194,97,10,.1);
+  --sos-a:#ef4444; --sos-b:#b91c1c;
+}
+/* 护眼绿：浅绿底 + 森林绿点缀 */
+:root[data-theme="forest"]{
+  --bg:#eef6f0; --bg-elev:#f7fbf8; --surface:#ffffff; --surface-2:#f1f7f3;
+  --border:rgba(22,78,52,.13); --border-strong:rgba(22,78,52,.22);
+  --text:#14301f; --text-2:#4e6b59; --text-3:#8aa394;
+  --accent:#0f7a4d; --accent-soft:rgba(15,122,77,.1); --accent-line:rgba(15,122,77,.3);
+  --ok:#0f7a4d; --warn:#a16207; --danger:#b42318; --info:#4f46e5;
+  --ok-bg:rgba(15,122,77,.09); --warn-bg:rgba(161,98,7,.1); --danger-bg:rgba(180,35,24,.08);
+  --grid:rgba(22,78,52,.07);
+  --track:rgba(22,78,52,.11);
+  --shadow:0 1px 2px rgba(22,78,52,.06), 0 8px 24px rgba(22,78,52,.09);
+  --nav-active:rgba(15,122,77,.1);
+  --sos-a:#ef4444; --sos-b:#b91c1c;
+}
 
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -73,6 +101,36 @@ body{
   background:var(--bg); color:var(--text); line-height:1.55;
   -webkit-font-smoothing:antialiased; font-size:13px;
   transition:background .25s, color .25s;
+}
+/* ---- 各主题的背景氛围（柔和渐变光晕，固定不随内容滚动）----
+   只影响观感，不改变任何布局尺寸。 */
+:root[data-theme="dark"] body{
+  background:
+    radial-gradient(1200px 620px at 6% -12%, rgba(56,189,248,.13), transparent 62%),
+    radial-gradient(1000px 540px at 94% 2%, rgba(129,140,248,.10), transparent 64%),
+    var(--bg);
+  background-attachment:fixed;
+}
+:root[data-theme="light"] body{
+  background:
+    radial-gradient(1100px 560px at 8% -10%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(900px 500px at 96% 4%, rgba(99,102,241,.09), transparent 64%),
+    var(--bg);
+  background-attachment:fixed;
+}
+:root[data-theme="warm"] body{
+  background:
+    radial-gradient(1100px 560px at 10% -10%, rgba(251,191,36,.22), transparent 62%),
+    radial-gradient(900px 500px at 94% 4%, rgba(249,115,22,.14), transparent 64%),
+    var(--bg);
+  background-attachment:fixed;
+}
+:root[data-theme="forest"] body{
+  background:
+    radial-gradient(1100px 560px at 10% -10%, rgba(16,185,129,.16), transparent 62%),
+    radial-gradient(900px 500px at 94% 4%, rgba(34,197,94,.12), transparent 64%),
+    var(--bg);
+  background-attachment:fixed;
 }
 .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
 ::-webkit-scrollbar{width:7px;height:7px}
@@ -220,13 +278,6 @@ body{
   display:flex; flex-direction:column; padding:18px 12px 12px;
   position:sticky; top:0; height:100vh;
 }
-@media (max-width:820px){
-  .side{position:static;height:auto;flex-direction:row;align-items:center;
-        padding:12px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border)}
-  .side .brand{margin-bottom:0;padding-bottom:0;border:0;flex-shrink:0}
-  .side nav{flex-direction:row;flex:0 0 auto;margin-left:10px}
-  .side .side-foot{display:none}
-}
 .brand{display:flex;align-items:center;gap:10px;padding:0 8px 16px;margin-bottom:14px;
        border-bottom:1px solid var(--border)}
 .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);
@@ -244,23 +295,49 @@ body{
 .nitem svg{flex-shrink:0;opacity:.85}
 .nitem:hover{background:var(--surface);color:var(--text)}
 .nitem.on{background:var(--nav-active);color:var(--text)}
+
+/* ---------- 手机端（≤820px）侧边栏：两行布局 ----------
+   ⚠️ 本块必须放在 .side nav / .nitem 基础规则**之后**：同优先级下后写者胜，
+   之前把媒体查询写在前面，被 `.side nav{flex-direction:column}` 与
+   `.nitem{width:100%}` 覆盖 —— 手机端导航仍是竖排、按钮被压成 20px 宽。
+   第一行「品牌 + 退出」，第二行导航横向滚动。退出按钮不再被 display:none 隐藏。 */
+@media (max-width:820px){
+  /* min-width:0 是必须的：grid/flex 子项默认 min-width:auto，会被内容（导航）
+     撑到 754px，超出 390px 视口 → 第一行右侧的「退出」被挤出屏幕看不见。 */
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;
+        padding:10px 12px;row-gap:8px;overflow:visible;
+        min-width:0;max-width:100%;
+        border-right:0;border-bottom:1px solid var(--border)}
+  .side .brand{margin:0;padding:0;border:0;flex:1 1 auto;min-width:0}
+  .side nav{order:3;flex:0 0 100%;flex-direction:row;flex-wrap:nowrap;gap:4px;margin:0;
+            min-width:0;max-width:100%;
+            overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .side .nitem{width:auto;flex:0 0 auto;padding:7px 11px}
+  .side .nitem.on::before{display:none}
+  .side .side-foot{display:flex;flex-direction:row;align-items:center;gap:6px;
+                   order:2;margin:0;padding:0;border:0;flex:0 0 auto}
+  .side .side-foot > div:first-child{display:none}  /* 连接状态文字块，手机端省略 */
+}
 .nitem.on svg{opacity:1;stroke:var(--accent)}
 .nitem.on::before{content:"";position:absolute;left:-12px;top:50%;transform:translateY(-50%);
                   width:2px;height:15px;background:var(--accent);border-radius:0 2px 2px 0}
 .nitem .cnt{margin-left:auto;font-size:11px;padding:0 6px;border-radius:99px;
             background:var(--danger-bg);color:var(--danger);line-height:1.6}
+/* 纵排两行：第一行状态文字，第二行主题/退出按钮 ——
+   横排时主题按钮（带名字）会把状态文字挤成多行换行。 */
 .side-foot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--border);
-           display:flex;align-items:center;justify-content:space-between;gap:8px}
-.side-foot .st{font-size:11px;color:var(--text-3);line-height:1.45}
+           display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.side-foot .st{font-size:11px;color:var(--text-3);line-height:1.45;white-space:nowrap}
 .tbtn{
   border:1px solid var(--border-strong);background:transparent;color:var(--text-2);
   width:28px;height:28px;border-radius:7px;cursor:pointer;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;transition:all .16s
 }
 .tbtn:hover{color:var(--text);border-color:var(--accent-line);background:var(--accent-soft)}
-.tbtn .ic-sun{display:none}
-:root[data-theme="dark"] .tbtn .ic-sun{display:block}
-:root[data-theme="dark"] .tbtn .ic-moon{display:none}
+/* 带文字的主题按钮（显示当前主题名） */
+.tbtn-wide{width:auto;padding:0 9px;gap:5px;font-size:12px;font-family:inherit;height:28px;
+           color:var(--text-2);white-space:nowrap}
+.tbtn-wide span{line-height:1}
 
 /* ---------- 主区 ---------- */
 .main{min-width:0;padding:22px 26px 40px;max-width:1420px}
@@ -1066,16 +1143,19 @@ input::placeholder{color:var(--text-3)}
   border-radius:5px;padding:1px 6px;font-size:11px;color:var(--text-2);margin:0 2px;
 }
 
-.band-close{
+.band-tools{
   position:fixed;top:18px;right:22px;z-index:860;
-  display:none;align-items:center;gap:7px;
+  display:none;align-items:center;gap:8px;
+}
+.band-tools.show{display:flex}
+.band-tool{
+  display:flex;align-items:center;gap:7px;
   background:var(--surface);border:1px solid var(--border);border-radius:9px;
   padding:8px 13px;cursor:pointer;color:var(--text);font-family:inherit;font-size:12.5px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow);white-space:nowrap;
 }
-.band-close.show{display:flex}
-.band-close svg{stroke:var(--text-2)}
-.band-close:hover{border-color:var(--border-strong)}
+.band-tool svg{stroke:var(--text-2)}
+.band-tool:hover{border-color:var(--border-strong)}
 
 /* 侧栏「切换到手环」入口 */
 .side-switch{
@@ -1121,7 +1201,9 @@ input::placeholder{color:var(--text-3)}
   .wb-sos{ padding:17px 14px }
   .wb-sos .l{ font-size:15.5px }
   .band-note{ padding:18px; font-size:11.5px }
-  .band-close{ top:12px; right:12px; padding:7px 11px; font-size:12px }
+  .band-tools{ top:10px; right:10px; gap:6px; flex-wrap:wrap; justify-content:flex-end;
+               max-width:calc(100% - 20px) }
+  .band-tool{ padding:7px 11px; font-size:12px }
 }
 /* 超窄屏（iPhone SE 等 320px）：再收一档，保证不横向溢出 */
 @media (max-width:380px){
@@ -1252,11 +1334,20 @@ input::placeholder{color:var(--text-3)}
 </div>
 
 <!-- ===================== 手环端（老人视角） ===================== -->
-<button class="band-close" id="bandClose">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M18.4 5.6 5.6 18.4M5.6 5.6l12.8 12.8"/>
-  </svg>返回监护端
-</button>
+<!-- 手环端工具条：退出登录 + 返回监护端。
+     老人身份登录会直接进手环端，此处必须有退出入口，否则无法切换账号。 -->
+<div class="band-tools" id="bandTools">
+  <button class="band-tool" id="bandLogout">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5M21 12H9"/>
+    </svg>退出登录
+  </button>
+  <button class="band-tool" id="bandClose">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18.4 5.6 5.6 18.4M5.6 5.6l12.8 12.8"/>
+    </svg>返回监护端
+  </button>
+</div>
 
 <div id="band">
   <div class="band-stage">
@@ -1548,7 +1639,7 @@ input::placeholder{color:var(--text-3)}
       </div>
       <div>
         <div class="bt">居家智能监护</div>
-        <div class="bs">李奶奶 · 78岁</div>
+        <div class="bs" id="brandSub">加载中…</div>
       </div>
     </div>
 
@@ -1612,13 +1703,12 @@ input::placeholder{color:var(--text-3)}
         <div class="st">v1.3 · 本地模拟器</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="tbtn" id="themeBtn" title="切换明暗主题">
-          <svg class="ic-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.4 14.2A8.6 8.6 0 0 1 9.8 3.6a8.6 8.6 0 1 0 10.6 10.6z"/>
+        <button class="tbtn tbtn-wide" id="themeBtn" title="切换主题：深色 / 浅色 / 暖阳 / 护眼绿">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3.4a8.6 8.6 0 0 0 0 17.2c1.5 0 2.2-.9 2.2-1.9 0-.6-.3-1-.6-1.4-.3-.4-.6-.8-.6-1.4 0-1 .8-1.8 1.8-1.8h2.1a4.7 4.7 0 0 0 4.7-4.7C20.6 6.5 16.7 3.4 12 3.4z"/>
+            <circle cx="7.6" cy="11.4" r="1.1"/><circle cx="11.4" cy="7.8" r="1.1"/><circle cx="15.8" cy="9.6" r="1.1"/>
           </svg>
-          <svg class="ic-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/>
-          </svg>
+          <span id="themeName">深色</span>
         </button>
         <button class="tbtn" id="logoutBtn" title="退出登录" style="width:auto;padding:0 10px;font-size:12px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px">
@@ -3565,6 +3655,35 @@ function ecRoleDefaults(k){
   return (r && r.default_channels) ? r.default_channels.slice() : ['sms'];
 }
 
+/** 同步侧边栏品牌区的老人姓名/年龄。
+ *
+ * 侧边栏那行「姓名 · 岁数」曾经是写死在 HTML 里的（李奶奶 · 78岁），
+ * 于是新建账号绑定张姓老人后，界面仍显示李奶奶 —— 与实际监测对象不符。
+ * 这里在 init 时按当前 EID 拉档案并写回文本。
+ */
+async function loadElderProfile(){
+  const el = document.getElementById('brandSub');
+  if(!el) return;
+  // 取不到档案时给出**有信息量**的文案，而不是笼统的「未命名」——
+  // 后者会被误读成「我的数据被删了」。两种原因分开说：
+  //   离线（双击本地文件）→ 只有演示老人那套快照数据，自建档案拿不到
+  //   在线但查无此档案 → 说明绑定关系与档案对不上
+  const fallback = () => {
+    el.textContent = (typeof OFFLINE !== 'undefined' && OFFLINE.active)
+      ? '离线演示模式' : '档案未找到';
+  };
+  try{
+    const r = await fetch(API + '/api/elderly/' + encodeURIComponent(EID));
+    const j = await r.json();
+    const nm = String((j && j.name) || '').trim();
+    if(!nm){ fallback(); return; }
+    const age = parseInt((j && j.age), 10) || 0;
+    el.textContent = age > 0 ? (nm + ' · ' + age + '岁') : nm;
+  }catch(e){
+    fallback();
+  }
+}
+
 /** 拉取名单 + 可选项元数据（离线模式会自动走本地快照） */
 async function loadContacts(){
   try{
@@ -4160,6 +4279,8 @@ async function init(){
   pollRoom(); pollEscalation(); pollRadar(); pollEnv();
   pollSafety(); pollDoor(); pollAudio();
   loadAwayRules();
+  // 侧边栏品牌区显示当前监测对象的姓名/年龄（按 EID 拉取，不写死）
+  await loadElderProfile();
   // 紧急联系人名单（SOS / 一级预警的收件人来源）—— 必须按当前老人拉取
   await loadContacts();
   // 离线模式下数据是静态快照，高频轮询不会有新数据，反而浪费性能；
@@ -4346,25 +4467,52 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   try{ savedTheme = localStorage.getItem('wb-theme'); }catch(e){}
   document.documentElement.setAttribute('data-theme', savedTheme || 'dark');
 
+  // ---- 主题切换：4 套预设（含各自的背景氛围），点击循环切换 ----
+  var THEMES = [
+    {id:'dark',   name:'深色',   grid:'rgba(255,255,255,.055)', tick:'#5d6f8f'},
+    {id:'light',  name:'浅色',   grid:'rgba(15,23,42,.05)',     tick:'#93a2b8'},
+    {id:'warm',   name:'暖阳',   grid:'rgba(120,72,20,.07)',    tick:'#b09472'},
+    {id:'forest', name:'护眼绿', grid:'rgba(22,78,52,.07)',     tick:'#8aa394'},
+  ];
+  function applyTheme(id){
+    var t = THEMES.filter(function(x){ return x.id === id; })[0] || THEMES[0];
+    document.documentElement.setAttribute('data-theme', t.id);
+    var nm = document.getElementById('themeName');
+    if(nm) nm.textContent = t.name;
+    try{ localStorage.setItem('wb-theme', t.id); }catch(e){}
+    // 让 Chart.js 重新适配主题色（网格线/刻度颜色随主题变化）
+    if(typeof chart !== 'undefined' && chart && chart.options && chart.options.scales){
+      var s = chart.options.scales;
+      if(s.y && s.y.grid) s.y.grid.color = t.grid;
+      if(s.y && s.y.ticks) s.y.ticks.color = t.tick;
+      if(s.y && s.y.title) s.y.title.color = t.tick;
+      if(s.y1 && s.y1.ticks) s.y1.ticks.color = t.tick;
+      if(s.y1 && s.y1.title) s.y1.title.color = t.tick;
+      if(chart.options.plugins && chart.options.plugins.legend &&
+         chart.options.plugins.legend.labels){
+        chart.options.plugins.legend.labels.color = t.tick;
+      }
+      try{ chart.update('none'); }catch(e){}
+    }
+  }
+  window.__applyTheme = applyTheme;
+  window.__currentTheme = function(){
+    return document.documentElement.getAttribute('data-theme') || 'dark';
+  };
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+
   var themeBtn = document.getElementById('themeBtn');
   if(themeBtn){
     themeBtn.onclick = function(){
-      var cur = document.documentElement.getAttribute('data-theme');
-      var next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      try{ localStorage.setItem('wb-theme', next); }catch(e){}
-      // 让 Chart.js 重新适配主题色
-      if(typeof chart !== 'undefined' && chart){
-        var gridColor = next==='dark' ? 'rgba(255,255,255,.055)' : 'rgba(15,23,42,.05)';
-        var tickColor = next==='dark' ? '#5d6f8f' : '#93a2b8';
-        chart.options.scales.y.grid.color = gridColor;
-        chart.options.scales.y.ticks.color = tickColor;
-        chart.options.scales.y.title.color = tickColor;
-        chart.options.scales.y1.ticks.color = tickColor;
-        chart.options.scales.y1.title.color = tickColor;
-        chart.options.plugins.legend.labels.color = tickColor;
-        chart.update('none');
+      var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      // 用 for 而非 findIndex：旧内核（IE/部分国产浏览器）没有 findIndex
+      var idx = 0;
+      for(var i = 0; i < THEMES.length; i++){
+        if(THEMES[i].id === cur){ idx = i; break; }
       }
+      var next = THEMES[(idx + 1) % THEMES.length];
+      applyTheme(next.id);
+      if(typeof toast === 'function') toast('主题：' + next.name, 'info');
     };
   }
 
@@ -5435,9 +5583,10 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
       .catch(function(){ render(null); });
   }
 
+  var toolsEl = document.getElementById('bandTools');
   function openBand(){
     bandEl.classList.add('show');
-    closeBtn.classList.add('show');
+    if(toolsEl) toolsEl.classList.add('show');
     renderBandClock();
     renderBandData();
     wbBuildDots();
@@ -5447,11 +5596,18 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
   }
   function closeBand(){
     bandEl.classList.remove('show');
-    closeBtn.classList.remove('show');
+    if(toolsEl) toolsEl.classList.remove('show');
   }
 
   if(switchBtn) switchBtn.onclick = openBand;
   if(closeBtn) closeBtn.onclick = closeBand;
+  // 手环端「退出登录」：复用全局 logout（吊销令牌 + 清会话 + 回登录页）。
+  // 老人身份登录会直接进手环端，没有这个入口就退不出去。
+  var bandLogoutBtn = document.getElementById('bandLogout');
+  if(bandLogoutBtn) bandLogoutBtn.onclick = function(){
+    if(typeof window.__logout === 'function') window.__logout();
+    else closeBand();
+  };
 
   // 键盘左右翻页 + 滚轮翻页（桌面演示用；手机上直接左右滑）
   document.addEventListener('keydown', function(e){
