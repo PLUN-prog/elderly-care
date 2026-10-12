@@ -519,6 +519,31 @@ body{
 .al .atop{display:flex;align-items:center;gap:9px;margin-bottom:5px}
 .tag{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;letter-spacing:.3px;
      white-space:nowrap;flex-shrink:0}
+/* ---------- 老人档案页 ---------- */
+.pf-rows{display:flex;flex-direction:column;gap:10px}
+.pf-row{display:flex;gap:10px;font-size:12.5px;align-items:flex-start;line-height:1.5}
+.pf-row .k{flex:0 0 64px;color:var(--text-3)}
+.pf-row .v{flex:1;min-width:0;color:var(--text);word-break:break-word}
+.pf-tags{display:flex;flex-wrap:wrap;gap:7px}
+.pf-tag{font-size:11.5px;padding:4px 11px;border-radius:99px;
+        background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line)}
+.pf-list{display:flex;flex-direction:column;gap:8px}
+.pf-item{padding:9px 11px;border-radius:9px;background:var(--surface-2);
+         border:1px solid var(--border);font-size:12.5px;line-height:1.5}
+.pf-item .t{font-weight:500;color:var(--text)}
+.pf-item .s{color:var(--text-3);font-size:11.5px;margin-top:3px}
+.pf-elder{display:flex;align-items:center;justify-content:space-between;gap:10px;
+          padding:10px 12px;border-radius:10px;background:var(--surface-2);
+          border:1px solid var(--border);font-size:12.5px}
+.pf-elder.on{border-color:var(--accent-line);background:var(--accent-soft)}
+.pf-elder .nm{font-weight:500;color:var(--text)}
+.pf-elder .sub{color:var(--text-3);font-size:11.5px;margin-top:2px}
+.pf-go{font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;
+       border:1px solid var(--border-strong);background:var(--surface);color:var(--text-2);
+       font-family:inherit;white-space:nowrap}
+.pf-go:hover{border-color:var(--accent-line);color:var(--accent)}
+.pf-go[disabled]{opacity:.5;cursor:default}
+
 .tag-L1{background:var(--danger-bg);color:var(--danger)}
 .tag-L2{background:var(--warn-bg);color:var(--warn)}
 .tag-L3{background:var(--accent-soft);color:var(--accent)}
@@ -1613,6 +1638,13 @@ input::placeholder{color:var(--text-3)}
         </div>
       </form>
 
+      <!-- 已有档案：账号未绑定（或原绑定档案被移除）时，可直接选一个已有档案绑定，
+           不必重复新建 —— 否则「我的老人档案明明还在，却只能再建一个」。 -->
+      <div class="ne-existing" id="neExisting" style="display:none">
+        <div class="ne-divider"><span>或绑定已有的监测对象</span></div>
+        <div class="pf-list" id="neExistingList"></div>
+      </div>
+
       <div class="ne-divider"><span>或</span></div>
 
       <div class="ne-actions">
@@ -1677,6 +1709,13 @@ input::placeholder{color:var(--text-3)}
           <path d="M4.6 17.4V6.6A1.6 1.6 0 0 1 6.2 5h7.2l6 6v6.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6z"/>
           <path d="M13.4 5v6h6"/>
         </svg>照护服务</button>
+
+      <button class="nitem" data-page="profile">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.4" y="5.4" width="17.2" height="13.2" rx="2.2"/>
+          <circle cx="9.2" cy="11.4" r="2.2"/>
+          <path d="M5.8 16.2c.7-1.7 1.9-2.6 3.4-2.6s2.7.9 3.4 2.6M15.4 10.4h3.4M15.4 13.6h3.4"/>
+        </svg>老人档案</button>
 
       <button class="nitem" data-page="console">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -2309,7 +2348,121 @@ input::placeholder{color:var(--text-3)}
       </div>
     </section>
 
-    <!-- ========== 页 7：演示控制台 ========== -->
+    <!-- ========== 页 7：老人档案 ==========
+         集中展示当前账号绑定的监测对象：基本信息 / 慢病 / 用药 / 紧急联系人，
+         并支持就地编辑与「更换监测对象」。 -->
+    <section class="page" id="page-profile">
+      <div class="phead">
+        <div>
+          <h2>老人档案</h2>
+          <div class="psub">当前账号绑定的监测对象 · 基本信息与照护配置</div>
+        </div>
+        <div class="brow">
+          <button class="btn" id="pfEditBtn" type="button">编辑资料</button>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3.4" y="5.4" width="17.2" height="13.2" rx="2.2"/><circle cx="9.2" cy="11.4" r="2.2"/>
+                <path d="M5.8 16.2c.7-1.7 1.9-2.6 3.4-2.6s2.7.9 3.4 2.6M15.4 10.4h3.4M15.4 13.6h3.4"/>
+              </svg>基本信息
+            </div>
+            <span class="cm" id="pfEid">—</span>
+          </div>
+          <div class="pf-rows" id="pfBasic"><div class="empty">加载中…</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20s-6.6-4.4-6.6-9.6A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 6.6 3.2C18.6 15.6 12 20 12 20z"/>
+              </svg>慢性病
+            </div>
+          </div>
+          <div class="pf-tags" id="pfChronic"><div class="empty">加载中…</div></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4.6" y="8.4" width="14.8" height="10.4" rx="2"/><path d="M12 4.6v3.2M10.4 12.4h3.2M12 10.8v3.2"/>
+              </svg>用药清单
+            </div>
+          </div>
+          <div class="pf-list" id="pfMeds"><div class="empty">加载中…</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <div class="ct">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16.2 4.7a2 2 0 0 1 2 2v10.6a2 2 0 0 1-2 2H7.8a2 2 0 0 1-2-2V6.7a2 2 0 0 1 2-2z"/><path d="M12 9.6v4.4M9.8 11.8h4.4"/>
+              </svg>紧急联系人
+            </div>
+            <button class="btn ghost" id="pfGoContacts" type="button" style="padding:4px 10px;font-size:11.5px">去管理</button>
+          </div>
+          <div class="pf-list" id="pfContacts"><div class="empty">加载中…</div></div>
+        </div>
+      </div>
+
+      <!-- 编辑表单：默认隐藏，点「编辑资料」展开 -->
+      <form class="card" id="pfForm" style="display:none;margin-top:14px" autocomplete="off" novalidate>
+        <div class="card-h"><div class="ct">编辑资料</div></div>
+        <div class="ec-grid" style="margin-top:12px">
+          <div class="login-field">
+            <label for="pfName">姓名</label>
+            <input id="pfName" type="text" maxlength="20" placeholder="老人姓名">
+          </div>
+          <div class="login-field">
+            <label for="pfAge">年龄</label>
+            <input id="pfAge" type="number" min="1" max="130" placeholder="如 78">
+          </div>
+          <div class="login-field">
+            <label for="pfGender">性别</label>
+            <select id="pfGender">
+              <option value="female">女</option>
+              <option value="male">男</option>
+            </select>
+          </div>
+          <div class="login-field">
+            <label for="pfAddr">居住地址</label>
+            <input id="pfAddr" type="text" maxlength="60" placeholder="如 北京市朝阳区…">
+          </div>
+        </div>
+        <div class="login-field" style="margin-top:4px">
+          <label for="pfChronicIn">慢性病（多个用逗号分隔）</label>
+          <input id="pfChronicIn" type="text" maxlength="80" placeholder="如 高血压,2型糖尿病">
+        </div>
+        <div class="brow" style="margin-top:12px">
+          <button class="btn" type="submit" id="pfSaveBtn">保存</button>
+          <button class="btn ghost" type="button" id="pfCancelBtn">取消</button>
+        </div>
+        <div class="login-err" id="pfErr"></div>
+      </form>
+
+      <!-- 更换监测对象 -->
+      <div class="card" style="margin-top:14px">
+        <div class="card-h">
+          <div class="ct">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.6 8.4h11.2l-2.6-2.6M19.4 15.6H8.2l2.6 2.6"/>
+            </svg>更换监测对象
+          </div>
+          <span class="cm" id="pfSwitchHint">当前账号绑定的监测对象不对？在下方选择要切换的档案</span>
+        </div>
+        <div class="pf-list" id="pfElderList"><div class="empty">加载中…</div></div>
+      </div>
+    </section>
+
+    <!-- ========== 页 8：演示控制台 ========== -->
     <section class="page" id="page-console">
       <div class="phead">
         <div>
@@ -2482,16 +2635,22 @@ const OFFLINE = {
 
 /** 探测后端是否可用：超时很短，避免静态页面打开时长时间白屏 */
 async function detectBackend(){
-  try{
-    const ctl = new AbortController();
-    const t = setTimeout(()=>ctl.abort(), 1500);
-    const r = await fetch(API + '/api/health/latest/' + DEMO_ELDER_ID, {signal: ctl.signal});
-    clearTimeout(t);
-    if(!r.ok) throw new Error('bad status');
-    return true;
-  }catch(e){
-    return false;
+  // 探测托管平台的网关转发，首包可能 0.6～2s+（跨域 + 网关 + Flask）。
+  // 原先 1.5s 单次硬超时太紧：一次超时就被判「离线」，随后永久退回演示快照
+  // （用户表现为「网址打开也显示静态演示模式、自己注册的档案读不到」）。
+  // 改成 3 次机会 / 单次 4s，任一成功即在线。
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{
+      const ctl = new AbortController();
+      const t = setTimeout(()=>ctl.abort(), 4000);
+      const r = await fetch(API + '/api/health/latest/' + DEMO_ELDER_ID,
+                            {signal: ctl.signal, cache:'no-store'});
+      clearTimeout(t);
+      if(r.ok) return true;
+    }catch(e){ /* 单次失败不算数，继续重试 */ }
+    await new Promise(function(res){ setTimeout(res, 500); });
   }
+  return false;
 }
 
 /** 用已加载的 OFFLINE.snap 初始化可变状态（从快照的当前值出发）。
@@ -2749,6 +2908,9 @@ function offlinePost(rawPath, body){
 /** 安装 fetch 拦截 */
 function installOfflineFetch(){
   const rawFetch = window.fetch.bind(window);
+  // 暴露原生 fetch：离线恢复探测必须绕过本拦截器，
+  // 否则探测会命中 handleOfflineGet 从快照返回「成功」，永远探不出后端已恢复。
+  window.__rawFetch = rawFetch;
   window.fetch = async function(input, init){
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const method = ((init && init.method) || 'GET').toUpperCase();
@@ -2765,11 +2927,14 @@ function installOfflineFetch(){
       return offlinePost(url, init && init.body);
     }
 
-    // 在线模式：先试真实请求，失败则切离线
+    // 在线模式：先试真实请求，失败则切离线（保证界面不卡住）
     try{
       return await rawFetch(input, init);
     }catch(e){
+      const wasOffline = OFFLINE.active;
       OFFLINE.active = true;
+      // 运行期因网络抖动/后端重启而误切时，也要能自动探回来
+      if(!wasOffline) startBackendRecovery();
       if(method === 'GET') return handleOfflineGet(url);
       return offlinePost(url, init && init.body);
     }
@@ -2981,6 +3146,41 @@ function handleOfflineGet(url){
 }
 
 // 启动时探测并可能切换到离线模式
+/** 离线兜底后的自动恢复。
+ *
+ * 为什么必须有：进入离线模式后，**没有任何机制能再探回后端** ——
+ * 一次超时、或后端恰好正在重新发布，就会把页面永久锁在演示快照上
+ * （用户表现为「用网址打开也显示静态演示模式、自己注册的档案读不到」）。
+ *
+ * 注意用 window.__rawFetch 探测：普通 fetch 已被离线拦截器接管，
+ * 会从快照返回「成功」，永远探不出后端已恢复。
+ */
+function startBackendRecovery(){
+  let tries = 0;
+  const timer = setInterval(async function(){
+    if(!OFFLINE.active){ clearInterval(timer); return; }   // 已恢复在线，收工
+    if(++tries > 45){ clearInterval(timer); return; }      // 约 3 分钟后放弃
+    let ok = false;
+    try{
+      const rf = window.__rawFetch || fetch;
+      const ctl = new AbortController();
+      const t = setTimeout(function(){ ctl.abort(); }, 4000);
+      const r = await rf(API + '/api/health/latest/' + DEMO_ELDER_ID,
+                         {signal: ctl.signal, cache:'no-store'});
+      clearTimeout(t);
+      ok = !!(r && r.ok);
+    }catch(e){ ok = false; }
+    if(!ok) return;
+    clearInterval(timer);
+    OFFLINE.active = false;
+    console.log('[demo] 已恢复后端连接，切回在线模式');
+    if(typeof toast === 'function') toast('已连接服务器，正在加载实时数据…', 'info');
+    // 重新启动主逻辑（bootForSession 内部会自动重连 WebSocket 并重启轮询）
+    if(typeof window.__resetBoot === 'function') window.__resetBoot();
+    if(typeof window.__bootForSession === 'function') window.__bootForSession();
+  }, 4000);
+}
+
 (async function initDataLayer(){
   await loadSnapshot();
   const online = await detectBackend();
@@ -2991,6 +3191,7 @@ function handleOfflineGet(url){
   installOfflineFetch();
   // 暴露到 window，便于控制台调试与自动化测试断言
   window.OFFLINE = OFFLINE;
+  if(OFFLINE.active) startBackendRecovery();
   window.dispatchEvent(new Event('datalayer-ready'));
 })();
 
@@ -3661,6 +3862,8 @@ function ecRoleDefaults(k){
  * 于是新建账号绑定张姓老人后，界面仍显示李奶奶 —— 与实际监测对象不符。
  * 这里在 init 时按当前 EID 拉档案并写回文本。
  */
+window.__loadElderProfile = function(){ loadElderProfile(); };
+
 async function loadElderProfile(){
   const el = document.getElementById('brandSub');
   if(!el) return;
@@ -4525,6 +4728,221 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     };
   }
 
+  // ---------- 老人档案页 ----------
+  function pfEsc(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function pfEid(){
+    try{ return (typeof window.__currentEid === 'function' ? window.__currentEid() : '') || ''; }
+    catch(e){ return ''; }
+  }
+  function pfRow(k, v){
+    return '<div class="pf-row"><div class="k">' + pfEsc(k) + '</div><div class="v">'
+         + pfEsc(v) + '</div></div>';
+  }
+
+  async function loadProfile(){
+    const box = document.getElementById('pfBasic');
+    if(!box) return;
+    const eid = pfEid();
+    const eidEl = document.getElementById('pfEid');
+    if(eidEl) eidEl.textContent = eid || '—';
+
+    let d = {};
+    try{
+      d = await fetch(API + '/api/elderly/' + encodeURIComponent(eid))
+            .then(function(r){ return r.json(); });
+    }catch(e){ d = {}; }
+    d = d || {};
+
+    box.innerHTML = pfRow('姓名', d.name || '—')
+                  + pfRow('年龄', d.age ? d.age + ' 岁' : '—')
+                  + pfRow('性别', d.gender === 'male' ? '男' : (d.gender === 'female' ? '女' : '—'))
+                  + pfRow('地址', d.address || '—');
+
+    const ch = Array.isArray(d.chronic_diseases) ? d.chronic_diseases.filter(Boolean) : [];
+    const chEl = document.getElementById('pfChronic');
+    if(chEl){
+      chEl.innerHTML = ch.length
+        ? ch.map(function(x){ return '<span class="pf-tag">' + pfEsc(x) + '</span>'; }).join('')
+        : '<div class="empty">未填写慢性病</div>';
+    }
+
+    const meds = Array.isArray(d.medications) ? d.medications : [];
+    const medEl = document.getElementById('pfMeds');
+    if(medEl){
+      medEl.innerHTML = meds.length
+        ? meds.map(function(m){
+            return '<div class="pf-item"><div class="t">' + pfEsc(m.name || '—') + '</div>'
+                 + '<div class="s">' + pfEsc((m.dose ? m.dose + '　' : '')
+                 + '服用时间 ' + (m.schedule || '未设置')) + '</div></div>';
+          }).join('')
+        : '<div class="empty">暂无用药记录</div>';
+    }
+
+    const cs = Array.isArray(d.contacts) ? d.contacts : [];
+    const cEl = document.getElementById('pfContacts');
+    if(cEl){
+      cEl.innerHTML = cs.length
+        ? cs.map(function(c){
+            return '<div class="pf-item"><div class="t">' + pfEsc(c.name || '—')
+                 + '<span style="color:var(--text-3);font-size:11.5px;font-weight:400">　'
+                 + pfEsc(c.relation || '') + '</span></div>'
+                 + '<div class="s">' + pfEsc(c.phone || '未填电话') + '</div></div>';
+          }).join('')
+        : '<div class="empty">尚未配置紧急联系人</div>';
+    }
+
+    // 预填编辑表单
+    const setv = function(id, v){ const el = document.getElementById(id); if(el) el.value = v; };
+    setv('pfName', d.name || '');
+    setv('pfAge', d.age || '');
+    setv('pfGender', d.gender === 'male' ? 'male' : 'female');
+    setv('pfAddr', d.address || '');
+    setv('pfChronicIn', ch.join(','));
+
+    loadElderOptions();
+  }
+
+  async function loadElderOptions(){
+    const box = document.getElementById('pfElderList');
+    if(!box) return;
+    const cur = pfEid();
+    let list = [];
+    try{
+      const j = await fetch(API + '/api/elderly/').then(function(r){ return r.json(); });
+      list = Array.isArray(j.data) ? j.data : [];
+    }catch(e){ list = []; }
+    if(!list.length){
+      box.innerHTML = '<div class="empty">未获取到档案列表（离线演示模式下不可用）</div>';
+      return;
+    }
+    box.innerHTML = list.map(function(it){
+      const on = it.elder_id === cur;
+      return '<div class="pf-elder' + (on ? ' on' : '') + '">'
+           +   '<div style="min-width:0"><div class="nm">' + pfEsc(it.name || '未命名')
+           +     '<span class="sub" style="margin-left:6px">' + pfEsc(it.elder_id) + '</span></div>'
+           +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填')
+           +     (on ? ' · 当前绑定' : '') + '</div></div>'
+           +   (on ? '<button class="pf-go" disabled>已绑定</button>'
+                  : '<button class="pf-go" data-bind="' + pfEsc(it.elder_id) + '">切换到此人</button>')
+           + '</div>';
+    }).join('');
+    box.querySelectorAll('[data-bind]').forEach(function(b){
+      b.onclick = function(){ switchElder(b.getAttribute('data-bind')); };
+    });
+  }
+
+  async function switchElder(eid){
+    const sess = (typeof window.__session === 'function' ? window.__session() : null) || {};
+    const token = sess.token || '';
+    try{
+      const r = await fetch(API + '/api/auth/bind_elder', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ elder_id: eid })
+      });
+      const j = await r.json().catch(function(){ return null; });
+      if(r.ok && j && j.ok){
+        // 防御式写入：不依赖后端一定回传完整 user —— 以本地会话为基础
+        // 合并返回值，并**强制**把 elder_id 设为本次绑定的目标。
+        // （曾出现：接口 200、但会话未被更新，界面停在空状态。）
+        const prev = (typeof window.__session === 'function' ? window.__session() : null) || {};
+        const nextUser = Object.assign({}, prev.user || {}, j.user || {}, { elder_id: eid });
+        // writeSession 在另一个 IIFE，必须经 window 桥接
+        const ws = window.__writeSession;
+        if(typeof ws !== 'function') throw new Error('会话写入不可用');
+        ws({ user: nextUser, token: token });
+        if(typeof toast === 'function') toast('已切换到「' + (nextUser.display_name || eid) + '」', 'info');
+        if(typeof window.__resetBoot === 'function') window.__resetBoot();
+        if(typeof window.__bootForSession === 'function') window.__bootForSession();
+        loadProfile();
+      }else if(typeof toast === 'function'){
+        toast((j && j.error) || '切换失败，请重试', 'error');
+      }
+    }catch(e){
+      if(typeof toast === 'function') toast('切换失败：' + e.message, 'error');
+    }
+  }
+
+  // 「编辑资料」展开/收起
+  var pfEditBtn = document.getElementById('pfEditBtn');
+  var pfForm = document.getElementById('pfForm');
+  var pfErr = document.getElementById('pfErr');
+  if(pfEditBtn && pfForm){
+    pfEditBtn.onclick = function(){
+      const open = pfForm.style.display === 'none';
+      pfForm.style.display = open ? 'block' : 'none';
+      pfEditBtn.textContent = open ? '收起' : '编辑资料';
+      if(open) loadProfile();
+    };
+  }
+  var pfCancelBtn = document.getElementById('pfCancelBtn');
+  if(pfCancelBtn && pfForm){
+    pfCancelBtn.onclick = function(){
+      pfForm.style.display = 'none';
+      if(pfEditBtn) pfEditBtn.textContent = '编辑资料';
+      if(pfErr){ pfErr.textContent = ''; pfErr.classList.remove('show'); }
+    };
+  }
+  if(pfForm){
+    pfForm.addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      if(pfErr){ pfErr.textContent = ''; pfErr.classList.remove('show'); }
+      const nm = (document.getElementById('pfName').value || '').trim();
+      const age = parseInt(document.getElementById('pfAge').value, 10) || 0;
+      const gender = document.getElementById('pfGender').value;
+      const addr = (document.getElementById('pfAddr').value || '').trim();
+      const chronic = (document.getElementById('pfChronicIn').value || '')
+        .split(/[,，、\s]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+      if(!nm){
+        if(pfErr){ pfErr.textContent = '请填写姓名'; pfErr.classList.add('show'); }
+        return;
+      }
+      const btn = document.getElementById('pfSaveBtn');
+      btn.disabled = true; btn.textContent = '保存中…';
+      try{
+        const r = await fetch(API + '/api/elderly/', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ elder_id: pfEid(), name: nm, age: age, gender: gender,
+                                 address: addr, chronic_diseases: chronic })
+        });
+        const j = await r.json();
+        if(r.ok && j.ok){
+          if(typeof toast === 'function') toast('档案已保存', 'info');
+          await loadProfile();
+          if(typeof window.__loadElderProfile === 'function') window.__loadElderProfile();
+          pfForm.style.display = 'none';
+          if(pfEditBtn) pfEditBtn.textContent = '编辑资料';
+        }else if(pfErr){
+          pfErr.textContent = (j && j.error) || '保存失败';
+          pfErr.classList.add('show');
+        }
+      }catch(e){
+        if(pfErr){ pfErr.textContent = '保存失败：' + e.message; pfErr.classList.add('show'); }
+      }finally{
+        btn.disabled = false; btn.textContent = '保存';
+      }
+    });
+  }
+  // 「去管理」→ 跳照护服务页的联系人卡片
+  var pfGoContacts = document.getElementById('pfGoContacts');
+  if(pfGoContacts){
+    pfGoContacts.onclick = function(){
+      goto('care');
+      setTimeout(function(){
+        const c = document.getElementById('contactsCard');
+        if(c && c.scrollIntoView) c.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 120);
+    };
+  }
+  window.__loadProfile = loadProfile;
+  // 跨 IIFE 暴露：空状态页（另一个 IIFE）复用了档案页的转义与换绑逻辑
+  window.__pfEsc = pfEsc;
+  window.__switchElder = switchElder;
+
   // ---- 分页导航 ----
   var navItems = document.querySelectorAll('.nitem');
   var pages = document.querySelectorAll('.page');
@@ -4536,6 +4954,8 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
     if(page === 'vitals' && typeof chart !== 'undefined' && chart){
       setTimeout(function(){ chart.resize(); }, 60);
     }
+    // 老人档案页：每次进入都重新拉取（档案可能刚被编辑过）
+    if(page === 'profile' && typeof loadProfile === 'function') loadProfile();
   }
   navItems.forEach(function(n){
     n.onclick = function(){ goto(n.dataset.page); };
@@ -4757,6 +5177,10 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
       else  localStorage.removeItem(SESS_KEY);
     }catch(e){}
   }
+  // 跨 IIFE 暴露：档案页/空状态页的「切换监测对象」定义在另一个 IIFE，
+  // 那里拿不到本作用域的 writeSession —— 直接调用会 ReferenceError，
+  // 而且发生在 async 的 try 里会被 catch 静默吞掉（表现为「点了没反应」）。
+  window.__writeSession = writeSession;
 
   // ---------- 提示 ----------
   function showError(el, msg){
@@ -4816,7 +5240,38 @@ window.addEventListener('datalayer-ready', ()=>{ bootForSession(); });
       neShown = true;
       resetNeForm();
     }
+    renderNeExisting();
   };
+
+  /** 空状态页「或绑定已有的监测对象」：列出服务器上已有档案。
+   *  场景：账号本来绑的档案被移除（或换绑失败）后，用户不该被迫再建一个重复档案。 */
+  async function renderNeExisting(){
+    var box = document.getElementById('neExisting');
+    var list = document.getElementById('neExistingList');
+    if(!box || !list) return;
+    // 转义与换绑函数定义在另一个 IIFE，经 window 暴露后使用
+    var esc = window.__pfEsc || function(x){ return String(x == null ? '' : x); };
+    var bind = window.__switchElder;
+    if(typeof bind !== 'function'){ box.style.display = 'none'; return; }
+    var items = [];
+    try{
+      var j = await fetch(API + '/api/elderly/').then(function(r){ return r.json(); });
+      items = Array.isArray(j.data) ? j.data : [];
+    }catch(e){ items = []; }
+    if(!items.length){ box.style.display = 'none'; return; }
+    list.innerHTML = items.map(function(it){
+      return '<div class="pf-elder">'
+           +   '<div style="min-width:0"><div class="nm">' + esc(it.name || '未命名')
+           +     '<span class="sub" style="margin-left:6px">' + esc(it.elder_id) + '</span></div>'
+           +     '<div class="sub">' + (it.age ? it.age + ' 岁' : '年龄未填') + '</div></div>'
+           +   '<button class="pf-go" data-bind="' + esc(it.elder_id) + '">绑定</button>'
+           + '</div>';
+    }).join('');
+    box.style.display = '';
+    list.querySelectorAll('[data-bind]').forEach(function(b){
+      b.onclick = function(){ bind(b.getAttribute('data-bind')); };
+    });
+  }
   window.__hideNoElder = function(){
     var shell = document.getElementById('shell');
     if(shell) shell.classList.remove('ne-on');
